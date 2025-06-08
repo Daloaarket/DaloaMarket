@@ -813,7 +813,7 @@ const ListingCreatePage: React.FC = () => {
               disabled={isLoading || isUploading || isFirstListing === null}
             >
               {isLoading ? (
-                <LoadingSpinner size="small" className="text-white" />
+                <LoadingSpinner size="small\" className="text-white" />
               ) : (
                 prefillListing && prefillListing.id ? 'Payer et publier' : 'Publier et payer'
               )}
