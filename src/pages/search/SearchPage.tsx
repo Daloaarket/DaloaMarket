@@ -417,7 +417,7 @@ const SearchPage: React.FC = () => {
                   disabled={loading}
                 >
                   {loading ? (
-                    <LoadingSpinner size="small" className="mr-2" />
+                    <LoadingSpinner size="small\" className="mr-2" />
                   ) : (
                     <Clock className="h-5 w-5 mr-2" />
                   )}
