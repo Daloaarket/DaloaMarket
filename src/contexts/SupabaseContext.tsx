@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Database } from '../lib/database.types';
 
 type UserProfile = Database['public']['Tables']['users']['Row'] | null;
@@ -26,6 +26,12 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Only set up auth listener if Supabase is properly configured
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
@@ -47,6 +53,11 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const checkSession = async () => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
@@ -63,6 +74,11 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const fetchUserProfile = async (userId: string) => {
+    if (!isSupabaseConfigured) {
+      console.warn('Supabase not configured - cannot fetch user profile');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('users')
@@ -80,6 +96,10 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const signUp = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) {
+      return { error: new Error('Supabase not configured. Please check your environment variables.') };
+    }
+
     try {
       const { error } = await supabase.auth.signUp({ email, password });
       return { error };
@@ -89,6 +109,10 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) {
+      return { error: new Error('Supabase not configured. Please check your environment variables.') };
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       return { error };
@@ -98,6 +122,10 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const signOut = async () => {
+    if (!isSupabaseConfigured) {
+      return { error: new Error('Supabase not configured. Please check your environment variables.') };
+    }
+
     try {
       const { error } = await supabase.auth.signOut();
       return { error };
@@ -107,6 +135,10 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createUserProfile = async (profile: Omit<Database['public']['Tables']['users']['Insert'], 'id'>) => {
+    if (!isSupabaseConfigured) {
+      return { error: new Error('Supabase not configured. Please check your environment variables.') };
+    }
+
     try {
       if (!user) {
         return { error: new Error('User not authenticated') };
@@ -128,6 +160,10 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const updateUserProfile = async (profile: Partial<Database['public']['Tables']['users']['Update']>) => {
+    if (!isSupabaseConfigured) {
+      return { error: new Error('Supabase not configured. Please check your environment variables.') };
+    }
+
     try {
       if (!user) {
         return { error: new Error('User not authenticated') };
@@ -149,7 +185,7 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const refreshUserProfile = async () => {
-    if (user) {
+    if (user && isSupabaseConfigured) {
       await fetchUserProfile(user.id);
     }
   };
