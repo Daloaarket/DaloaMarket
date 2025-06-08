@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, ArrowRight } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { ShoppingBag, ArrowRight, AlertCircle } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Database } from '../lib/database.types';
 import SearchBar from '../components/search/SearchBar';
 import ListingCard from '../components/listings/ListingCard';
@@ -21,6 +21,11 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     const fetchLatestListings = async () => {
+      if (!isSupabaseConfigured) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('listings')
@@ -57,7 +62,7 @@ const HomePage: React.FC = () => {
   // Récupérer le solde de crédits à l'ouverture
   useEffect(() => {
     const fetchCredits = async () => {
-      if (!user?.id) {
+      if (!user?.id || !isSupabaseConfigured) {
         setUserCredits(null);
         return;
       }
@@ -83,6 +88,36 @@ const HomePage: React.FC = () => {
       localStorage.removeItem('credit_purchase_pending');
     }
   }, []);
+
+  // Show configuration warning if Supabase is not configured
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="pb-12">
+        {/* Configuration Warning */}
+        <section className="py-12 bg-warning-50">
+          <div className="container-custom">
+            <div className="max-w-2xl mx-auto text-center">
+              <AlertCircle className="h-16 w-16 text-warning-600 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-warning-800 mb-4">Configuration Required</h2>
+              <p className="text-warning-700 mb-6">
+                To use DaloaMarket, you need to configure your Supabase database connection.
+              </p>
+              <div className="bg-white rounded-lg p-6 text-left">
+                <h3 className="font-semibold mb-3">Setup Instructions:</h3>
+                <ol className="list-decimal list-inside space-y-2 text-sm">
+                  <li>Go to <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">supabase.com</a> and create a new project</li>
+                  <li>In your Supabase dashboard, go to Settings → API</li>
+                  <li>Copy your Project URL and anon/public key</li>
+                  <li>Update the .env file with your actual credentials</li>
+                  <li>Restart your development server</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-12">

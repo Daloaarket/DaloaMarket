@@ -18,18 +18,24 @@ const isValidUrl = (url: string) => {
 const hasValidCredentials = supabaseUrl && 
   supabaseAnonKey && 
   supabaseUrl !== 'your_supabase_url' && 
+  supabaseUrl !== 'https://your-project-ref.supabase.co' &&
   supabaseAnonKey !== 'your_supabase_anon_key' &&
+  supabaseAnonKey !== 'your-actual-anon-key-here' &&
   isValidUrl(supabaseUrl);
 
 if (!hasValidCredentials) {
-  console.error('Supabase configuration error: Please set up your Supabase credentials in the .env file');
-  console.error('Current values:', { 
-    supabaseUrl: supabaseUrl || 'missing', 
-    supabaseAnonKey: supabaseAnonKey ? 'present but invalid' : 'missing' 
-  });
+  console.warn('⚠️ Supabase not configured properly. Please update your .env file with actual Supabase credentials.');
+  console.warn('Instructions:');
+  console.warn('1. Go to https://supabase.com and create a project');
+  console.warn('2. Go to Settings → API in your Supabase dashboard');
+  console.warn('3. Copy your Project URL and anon key to the .env file');
+  console.warn('4. Restart your development server');
 }
 
 // Create a mock client if credentials are not valid to prevent app crash
 export const supabase = hasValidCredentials 
   ? createClient<Database>(supabaseUrl, supabaseAnonKey)
   : createClient<Database>('https://placeholder.supabase.co', 'placeholder-key');
+
+// Export a flag to check if Supabase is properly configured
+export const isSupabaseConfigured = hasValidCredentials;
