@@ -118,7 +118,7 @@ const AchatCreditsPage: React.FC = () => {
                 >
                   {loadingPackId === pack.name ? (
                     <>
-                      <LoadingSpinner size="small" className="text-white mr-2" />
+                      <LoadingSpinner size="small\" className="text-white mr-2" />
                       Traitement...
                     </>
                   ) : (
