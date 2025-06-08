@@ -6,7 +6,9 @@ import {
   SortDesc, 
   Clock, 
   X,
-  AlertCircle
+  AlertCircle,
+  Grid3X3,
+  List
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import SearchBar from '../../components/search/SearchBar';
@@ -44,6 +46,7 @@ const SearchPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   const [filters, setFilters] = useState<FilterState>({
     category: queryParams.get('category') || '',
@@ -57,7 +60,6 @@ const SearchPage: React.FC = () => {
   const ITEMS_PER_PAGE = 12;
   
   useEffect(() => {
-    // Update filters when URL params change
     setFilters({
       category: queryParams.get('category') || '',
       condition: queryParams.get('condition') || '',
@@ -66,9 +68,7 @@ const SearchPage: React.FC = () => {
       maxPrice: queryParams.get('maxPrice') || '',
     });
     
-    // Reset to page 1 when filters change
     setPage(1);
-    
     fetchListings(1);
   }, [location.search, sortBy, sortOrder]);
   
@@ -88,7 +88,6 @@ const SearchPage: React.FC = () => {
         .eq('status', 'active')
         .order(sortBy, { ascending: sortOrder === 'asc' });
       
-      // Apply search query if provided
       if (searchQuery) {
         query = query.textSearch('title', searchQuery, {
           type: 'websearch',
@@ -96,7 +95,6 @@ const SearchPage: React.FC = () => {
         });
       }
       
-      // Apply filters
       if (filters.category) {
         query = query.eq('category', filters.category);
       }
@@ -117,7 +115,6 @@ const SearchPage: React.FC = () => {
         query = query.lte('price', parseInt(filters.maxPrice));
       }
       
-      // Pagination
       const from = (pageNumber - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
       
@@ -234,27 +231,33 @@ const SearchPage: React.FC = () => {
   };
   
   return (
-    <div className="min-h-screen bg-grey-50 py-8">
-      <div className="container-custom">
+    <div className="min-h-screen bg-gradient-to-br from-grey-50 to-grey-100">
+      <div className="container-custom py-8">
         {/* Search Bar */}
         <div className="mb-8">
           <SearchBar initialQuery={searchQuery} />
         </div>
         
-        {/* Filters and Sort */}
-        <div className="flex flex-col md:flex-row justify-between mb-6">
-          <div className="flex items-center mb-4 md:mb-0">
-            <button
-              onClick={() => setIsFilterOpen(true)}
-              className="btn-outline flex items-center"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filtres
-            </button>
-            
-            {/* Active Filters */}
-            {(filters.category || filters.condition || filters.district || filters.minPrice || filters.maxPrice) && (
-              <div className="ml-4 flex flex-wrap gap-2">
+        {/* Filters and Controls */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            {/* Left side - Filters */}
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => setIsFilterOpen(true)}
+                className="btn-outline flex items-center gap-2 px-4 py-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filtres
+                {(filters.category || filters.condition || filters.district || filters.minPrice || filters.maxPrice) && (
+                  <span className="bg-primary text-white text-xs rounded-full px-2 py-0.5 ml-1">
+                    {[filters.category, filters.condition, filters.district, filters.minPrice || filters.maxPrice].filter(Boolean).length}
+                  </span>
+                )}
+              </button>
+              
+              {/* Active Filters */}
+              <div className="flex flex-wrap gap-2">
                 {filters.category && (
                   <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm flex items-center">
                     {getCategoryLabel(filters.category)}
@@ -262,12 +265,11 @@ const SearchPage: React.FC = () => {
                       onClick={() => {
                         const newFilters = { ...filters, category: '' };
                         setFilters(newFilters);
-                        
                         const params = new URLSearchParams(location.search);
                         params.delete('category');
                         navigate(`/search?${params.toString()}`);
                       }}
-                      className="ml-1"
+                      className="ml-2 hover:bg-primary-200 rounded-full p-0.5"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -281,12 +283,11 @@ const SearchPage: React.FC = () => {
                       onClick={() => {
                         const newFilters = { ...filters, condition: '' };
                         setFilters(newFilters);
-                        
                         const params = new URLSearchParams(location.search);
                         params.delete('condition');
                         navigate(`/search?${params.toString()}`);
                       }}
-                      className="ml-1"
+                      className="ml-2 hover:bg-primary-200 rounded-full p-0.5"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -300,12 +301,11 @@ const SearchPage: React.FC = () => {
                       onClick={() => {
                         const newFilters = { ...filters, district: '' };
                         setFilters(newFilters);
-                        
                         const params = new URLSearchParams(location.search);
                         params.delete('district');
                         navigate(`/search?${params.toString()}`);
                       }}
-                      className="ml-1"
+                      className="ml-2 hover:bg-primary-200 rounded-full p-0.5"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -321,59 +321,83 @@ const SearchPage: React.FC = () => {
                       onClick={() => {
                         const newFilters = { ...filters, minPrice: '', maxPrice: '' };
                         setFilters(newFilters);
-                        
                         const params = new URLSearchParams(location.search);
                         params.delete('minPrice');
                         params.delete('maxPrice');
                         navigate(`/search?${params.toString()}`);
                       }}
-                      className="ml-1"
+                      className="ml-2 hover:bg-primary-200 rounded-full p-0.5"
                     >
                       <X className="h-3 w-3" />
                     </button>
                   </div>
                 )}
-                
+              </div>
+              
+              {(filters.category || filters.condition || filters.district || filters.minPrice || filters.maxPrice) && (
                 <button 
                   onClick={resetFilters}
-                  className="text-grey-600 text-sm hover:text-grey-900 transition-colors"
+                  className="text-grey-600 text-sm hover:text-grey-900 transition-colors underline"
                 >
-                  Réinitialiser
+                  Tout effacer
+                </button>
+              )}
+            </div>
+            
+            {/* Right side - Sort and View */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-grey-600 text-sm">Trier par:</span>
+                <select
+                  className="input-field py-2 text-sm min-w-0"
+                  value={sortBy === 'created_at' ? 'newest' : sortBy === 'price' && sortOrder === 'asc' ? 'price_asc' : 'price_desc'}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                >
+                  <option value="newest">Plus récent</option>
+                  <option value="price_asc">Prix croissant</option>
+                  <option value="price_desc">Prix décroissant</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center bg-grey-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-primary' : 'text-grey-600 hover:text-grey-900'}`}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-primary' : 'text-grey-600 hover:text-grey-900'}`}
+                >
+                  <List className="h-4 w-4" />
                 </button>
               </div>
-            )}
-          </div>
-          
-          <div className="flex items-center">
-            <span className="text-grey-600 mr-2">Trier par:</span>
-            <select
-              className="input-field py-2"
-              value={sortBy === 'created_at' ? 'newest' : sortBy === 'price' && sortOrder === 'asc' ? 'price_asc' : 'price_desc'}
-              onChange={(e) => handleSortChange(e.target.value)}
-            >
-              <option value="newest">Plus récent</option>
-              <option value="price_asc">Prix croissant</option>
-              <option value="price_desc">Prix décroissant</option>
-            </select>
+            </div>
           </div>
         </div>
         
         {/* Results Count */}
         <div className="mb-6">
-          <p className="text-grey-600">
-            {totalCount} résultat{totalCount !== 1 ? 's' : ''}
-            {searchQuery && ` pour "${searchQuery}"`}
+          <p className="text-grey-600 text-lg">
+            <span className="font-semibold text-grey-900">{totalCount}</span> résultat{totalCount !== 1 ? 's' : ''}
+            {searchQuery && (
+              <span> pour <span className="font-semibold text-primary">"{searchQuery}"</span></span>
+            )}
           </p>
         </div>
         
-        {/* Listings Grid */}
+        {/* Listings Grid/List */}
         {loading && page === 1 ? (
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-20">
             <LoadingSpinner size="large" />
           </div>
         ) : listings.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className={viewMode === 'grid' 
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" 
+              : "space-y-6"
+            }>
               {listings.map((listing) => (
                 <ListingCard 
                   key={listing.id} 
@@ -386,16 +410,16 @@ const SearchPage: React.FC = () => {
             
             {/* Load More */}
             {hasMore && (
-              <div className="mt-8 text-center">
+              <div className="mt-12 text-center">
                 <button
                   onClick={loadMore}
-                  className="btn-outline flex items-center mx-auto"
+                  className="btn-outline flex items-center mx-auto px-8 py-3 text-lg"
                   disabled={loading}
                 >
                   {loading ? (
-                    <LoadingSpinner size="small\" className="mr-2" />
+                    <LoadingSpinner size="small" className="mr-2" />
                   ) : (
-                    <Clock className="h-4 w-4 mr-2" />
+                    <Clock className="h-5 w-5 mr-2" />
                   )}
                   Charger plus d'annonces
                 </button>
@@ -403,15 +427,15 @@ const SearchPage: React.FC = () => {
             )}
           </>
         ) : (
-          <div className="bg-white rounded-card shadow-card p-8 text-center">
-            <AlertCircle className="h-16 w-16 text-grey-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Aucune annonce trouvée</h3>
-            <p className="text-grey-600 mb-6">
+          <div className="bg-white rounded-3xl shadow-xl p-12 text-center max-w-2xl mx-auto">
+            <AlertCircle className="h-20 w-20 text-grey-400 mx-auto mb-6" />
+            <h3 className="text-2xl font-bold mb-4">Aucune annonce trouvée</h3>
+            <p className="text-grey-600 mb-8 text-lg">
               Aucune annonce ne correspond à votre recherche. Essayez de modifier vos filtres ou votre recherche.
             </p>
             <button
               onClick={resetFilters}
-              className="btn-primary"
+              className="btn-primary text-lg px-8 py-4"
             >
               Réinitialiser les filtres
             </button>
@@ -421,21 +445,21 @@ const SearchPage: React.FC = () => {
       
       {/* Filter Modal */}
       {isFilterOpen && (
-        <div className="fixed inset-0 bg-grey-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-card shadow-card p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Filtres</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Filtres</h2>
               <button
                 onClick={() => setIsFilterOpen(false)}
-                className="text-grey-500 hover:text-grey-700"
+                className="p-2 rounded-xl text-grey-500 hover:text-grey-700 hover:bg-grey-100 transition-colors"
               >
                 <X className="h-6 w-6" />
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label htmlFor="category" className="input-label">
+                <label htmlFor="category" className="input-label text-base font-semibold">
                   Catégorie
                 </label>
                 <select
@@ -455,7 +479,7 @@ const SearchPage: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="condition" className="input-label">
+                <label htmlFor="condition" className="input-label text-base font-semibold">
                   État
                 </label>
                 <select
@@ -475,7 +499,7 @@ const SearchPage: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="district" className="input-label">
+                <label htmlFor="district" className="input-label text-base font-semibold">
                   Quartier
                 </label>
                 <select
@@ -495,13 +519,13 @@ const SearchPage: React.FC = () => {
               </div>
               
               <div>
-                <label className="input-label">Prix (FCFA)</label>
+                <label className="input-label text-base font-semibold">Prix (FCFA)</label>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <input
                       type="number"
                       name="minPrice"
-                      placeholder="Min"
+                      placeholder="Prix min"
                       className="input-field"
                       value={filters.minPrice}
                       onChange={handleFilterChange}
@@ -512,7 +536,7 @@ const SearchPage: React.FC = () => {
                     <input
                       type="number"
                       name="maxPrice"
-                      placeholder="Max"
+                      placeholder="Prix max"
                       className="input-field"
                       value={filters.maxPrice}
                       onChange={handleFilterChange}
@@ -523,17 +547,17 @@ const SearchPage: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex justify-between mt-6">
+            <div className="flex gap-4 mt-8">
               <button
                 onClick={resetFilters}
-                className="btn-outline"
+                className="btn-outline flex-1 py-3"
               >
                 Réinitialiser
               </button>
               
               <button
                 onClick={applyFilters}
-                className="btn-primary"
+                className="btn-primary flex-1 py-3"
               >
                 Appliquer
               </button>
