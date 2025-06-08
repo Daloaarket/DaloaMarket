@@ -42,7 +42,29 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { userId, type, annonceId, boostOption, credits, packName } = JSON.parse(event.body);
+    // Vérifier que le body existe
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: 'Corps de la requête manquant' })
+      };
+    }
+
+    let requestData;
+    try {
+      requestData = JSON.parse(event.body);
+    } catch (parseError) {
+      return {
+        statusCode: 400,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: 'Format JSON invalide' })
+      };
+    }
+
+    const { userId, type, annonceId, boostOption, credits, packName } = requestData;
+
+    console.log('Requête reçue:', { userId, type, annonceId, boostOption, credits, packName });
 
     if (!userId) {
       return {
@@ -52,9 +74,21 @@ exports.handler = async (event) => {
       };
     }
 
+    if (!type || !['annonce', 'boost', 'pack'].includes(type)) {
+      return {
+        statusCode: 400,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: 'Type de paiement invalide' })
+      };
+    }
+
     // Vérifier la configuration PayDunya
     if (!PAYDUNYA_CONFIG.MASTER_KEY || !PAYDUNYA_CONFIG.PRIVATE_KEY || !PAYDUNYA_CONFIG.TOKEN) {
-      console.error('Configuration PayDunya manquante');
+      console.error('Configuration PayDunya manquante:', {
+        hasMasterKey: !!PAYDUNYA_CONFIG.MASTER_KEY,
+        hasPrivateKey: !!PAYDUNYA_CONFIG.PRIVATE_KEY,
+        hasToken: !!PAYDUNYA_CONFIG.TOKEN
+      });
       return {
         statusCode: 500,
         headers: CORS_HEADERS,
@@ -70,6 +104,7 @@ exports.handler = async (event) => {
       .single();
 
     if (userError || !user) {
+      console.error('Erreur utilisateur:', userError);
       return {
         statusCode: 400,
         headers: CORS_HEADERS,
@@ -126,9 +161,9 @@ exports.handler = async (event) => {
         }
       },
       actions: {
-        return_url: `${process.env.VITE_APP_URL || 'https://daloa-market.netlify.app'}/payment/success?type=${type}&user_id=${userId}${annonceId ? `&listing_id=${annonceId}` : ''}`,
-        cancel_url: `${process.env.VITE_APP_URL || 'https://daloa-market.netlify.app'}/payment/failure?type=${type}`,
-        callback_url: `${process.env.VITE_APP_URL || 'https://daloa-market.netlify.app'}/.netlify/functions/paydunya-callback`
+        return_url: `https://daloa-market.netlify.app/payment/success?type=${type}&user_id=${userId}${annonceId ? `&listing_id=${annonceId}` : ''}`,
+        cancel_url: `https://daloa-market.netlify.app/payment/failure?type=${type}`,
+        callback_url: `https://daloa-market.netlify.app/.netlify/functions/paydunya-callback`
       },
       custom_data: {
         user_id: userId,
@@ -145,53 +180,89 @@ exports.handler = async (event) => {
       amount,
       type,
       userId,
-      mode: PAYDUNYA_CONFIG.MODE
+      mode: PAYDUNYA_CONFIG.MODE,
+      url: `${PAYDUNYA_CONFIG.BASE_URL}/checkout-invoice/create`
     });
 
-    // Appel à l'API PayDunya
-    const response = await axios.post(
-      `${PAYDUNYA_CONFIG.BASE_URL}/checkout-invoice/create`,
-      invoiceData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'PAYDUNYA-MASTER-KEY': PAYDUNYA_CONFIG.MASTER_KEY,
-          'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_CONFIG.PRIVATE_KEY,
-          'PAYDUNYA-TOKEN': PAYDUNYA_CONFIG.TOKEN,
-          'PAYDUNYA-MODE': PAYDUNYA_CONFIG.MODE
+    // Appel à l'API PayDunya avec timeout et gestion d'erreur améliorée
+    let response;
+    try {
+      response = await axios.post(
+        `${PAYDUNYA_CONFIG.BASE_URL}/checkout-invoice/create`,
+        invoiceData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'PAYDUNYA-MASTER-KEY': PAYDUNYA_CONFIG.MASTER_KEY,
+            'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_CONFIG.PRIVATE_KEY,
+            'PAYDUNYA-TOKEN': PAYDUNYA_CONFIG.TOKEN,
+            'PAYDUNYA-MODE': PAYDUNYA_CONFIG.MODE
+          },
+          timeout: 30000 // 30 secondes de timeout
         }
-      }
-    );
+      );
+    } catch (axiosError) {
+      console.error('Erreur appel PayDunya:', {
+        message: axiosError.message,
+        response: axiosError.response?.data,
+        status: axiosError.response?.status
+      });
+      
+      return {
+        statusCode: 500,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          error: 'Erreur de communication avec PayDunya',
+          details: axiosError.response?.data || axiosError.message
+        })
+      };
+    }
 
     console.log('Réponse PayDunya:', {
       response_code: response.data.response_code,
+      response_text: response.data.response_text,
       token: response.data.token
     });
 
     if (response.data.response_code !== '00') {
-      throw new Error(response.data.response_text || 'Erreur lors de la création de la facture PayDunya');
+      return {
+        statusCode: 400,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          error: response.data.response_text || 'Erreur lors de la création de la facture PayDunya',
+          code: response.data.response_code
+        })
+      };
     }
 
     // Enregistrer la transaction en base
-    const { error: transactionError } = await supabase
-      .from('transactions')
-      .insert({
-        user_id: userId,
-        listing_id: annonceId || null,
-        amount: amount,
-        type: type,
-        status: 'pending',
-        paydunya_token: response.data.token
-      });
+    try {
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          listing_id: annonceId || null,
+          amount: amount,
+          type: type,
+          status: 'pending',
+          paydunya_token: response.data.token
+        });
 
-    if (transactionError) {
-      console.error('Erreur enregistrement transaction:', transactionError);
+      if (transactionError) {
+        console.error('Erreur enregistrement transaction:', transactionError);
+        // Ne pas faire échouer la requête pour autant
+      }
+    } catch (dbError) {
+      console.error('Erreur base de données:', dbError);
+      // Ne pas faire échouer la requête pour autant
     }
 
+    // Retourner la réponse de succès
     return {
       statusCode: 200,
       headers: CORS_HEADERS,
       body: JSON.stringify({
+        success: true,
         checkout_url: response.data.response_text,
         token: response.data.token,
         amount: amount,
@@ -200,13 +271,14 @@ exports.handler = async (event) => {
     };
 
   } catch (error) {
-    console.error('Erreur PayDunya:', error.response?.data || error.message);
+    console.error('Erreur générale:', error);
     
     return {
       statusCode: 500,
       headers: CORS_HEADERS,
       body: JSON.stringify({
-        error: error.response?.data?.response_text || error.message || 'Erreur lors de la création du paiement'
+        error: 'Erreur interne du serveur',
+        message: error.message
       })
     };
   }
