@@ -317,23 +317,6 @@ const ListingCreatePage: React.FC = () => {
     return data;
   };
   
-  const saveTransaction = async (listingId: string, amount: number, type: string, paydunyaToken: string) => {
-    if (!user?.id) return;
-    
-    const { error } = await supabase
-      .from('transactions')
-      .insert({
-        user_id: user.id,
-        listing_id: listingId,
-        amount,
-        type,
-        status: 'pending',
-        paydunya_token: paydunyaToken
-      });
-    
-    if (error) throw error;
-  };
-  
   const processPayment = async (formData: ListingFormData, paymentType: 'annonce' | 'boost' | 'pack' = 'annonce', packInfo?: { credits: number, packName: string }) => {
     try {
       let listingId = prefillListing?.id;
@@ -358,21 +341,23 @@ const ListingCreatePage: React.FC = () => {
         body.credits = packInfo.credits;
         body.packName = packInfo.packName;
       }
-      // Appel backend pour créer le paiement PayDunya
-      const response = await fetch('/.netlify/functions/paydunya-ipn', {
+      
+      // Appel à la nouvelle fonction PayDunya
+      const response = await fetch('/.netlify/functions/paydunya-create-invoice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      
       const data = await response.json();
+      
       if (!response.ok || !data.checkout_url) {
         throw new Error(data.error || 'Erreur lors de la création du paiement');
       }
-      // Enregistre la transaction si nouvelle annonce ou boost
-      if ((paymentType === 'annonce' || paymentType === 'boost') && !prefillListing?.id) {
-        await saveTransaction(listingId ?? '', totalPrice, paymentType, (data.token as string) ?? '');
-      }
+      
+      // Rediriger vers PayDunya
       window.location.href = data.checkout_url;
+      
     } catch (error) {
       console.error('Payment processing error:', error);
       if (error instanceof Error) {
@@ -396,7 +381,7 @@ const ListingCreatePage: React.FC = () => {
 
     // Cas 1 : Boost => paiement direct (inchangé)
     if (data.boostOption) {
-      await processPayment(data);
+      await processPayment(data, 'boost');
       return;
     }
 
@@ -448,7 +433,7 @@ const ListingCreatePage: React.FC = () => {
     }
 
     // Cas 4 : Pas de crédits => paiement à l'unité (200F)
-    await processPayment(data);
+    await processPayment(data, 'annonce');
   };
   
   if (isCheckingUser) {
@@ -798,7 +783,7 @@ const ListingCreatePage: React.FC = () => {
               </div>
               <div className="mt-6 text-base text-grey-700 flex items-start gap-2 bg-white/60 rounded-lg p-4 border border-primary-100">
                 <CreditCard className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Paiement sécurisé via FedaPay (Orange Money, MTN Mobile Money).</span>
+                <span>Paiement sécurisé via PayDunya (Orange Money, MTN Mobile Money).</span>
               </div>
             </div>
             
@@ -841,11 +826,3 @@ const ListingCreatePage: React.FC = () => {
 };
 
 export default ListingCreatePage;
-
-// Modernisation UI/UX :
-// - Formulaires : champs arrondis, labels, focus, erreurs
-// - Boutons : classes utilitaires, transitions, feedback
-// - Cards : arrondis, ombre, padding
-// - Feedback visuel : loaders, messages
-// - Responsive : grilles, paddings
-// - Accessibilité : focus visible, aria-labels

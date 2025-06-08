@@ -18,7 +18,7 @@ const AchatCreditsPage: React.FC = () => {
   const handleBuyCredits = async (credits: number, packName: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/.netlify/functions/paydunya-ipn', {
+      const response = await fetch('/.netlify/functions/paydunya-create-invoice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -85,9 +85,3 @@ const AchatCreditsPage: React.FC = () => {
 };
 
 export default AchatCreditsPage;
-// Modernisation UI/UX :
-// - Cards packs : arrondis, ombre, hover, feedback
-// - Boutons : classes utilitaires, transitions, feedback
-// - Feedback visuel : loaders, messages
-// - Responsive : grilles, paddings
-// - Accessibilité : focus visible, aria-labels
