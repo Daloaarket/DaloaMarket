@@ -1,4 +1,4 @@
-// Netlify Function : Création d'une facture PayDunya
+// Netlify Function : Création d'une facture PayDunya (Production)
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -52,6 +52,16 @@ exports.handler = async (event) => {
       };
     }
 
+    // Vérifier la configuration PayDunya
+    if (!PAYDUNYA_CONFIG.MASTER_KEY || !PAYDUNYA_CONFIG.PRIVATE_KEY || !PAYDUNYA_CONFIG.TOKEN) {
+      console.error('Configuration PayDunya manquante');
+      return {
+        statusCode: 500,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: 'Configuration PayDunya manquante' })
+      };
+    }
+
     // Récupérer les informations utilisateur
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -92,34 +102,33 @@ exports.handler = async (event) => {
       itemName = `Pack de crédits (${packName || credits + ' crédits'})`;
     }
 
-    // Préparer les données pour PayDunya
+    // Préparer les données pour PayDunya selon la documentation
     const invoiceData = {
       invoice: {
         total_amount: amount,
-        description: description,
-        items: {
-          item_0: {
-            name: itemName,
-            quantity: 1,
-            unit_price: amount.toString(),
-            total_price: amount.toString(),
-            description: description
-          }
-        }
+        description: description
       },
       store: {
-        name: 'DaloaMarket',
-        tagline: 'Marketplace locale de Daloa'
+        name: 'DaloaMarket'
       },
       customer: {
         name: user.full_name || 'Utilisateur DaloaMarket',
         email: user.email,
         phone: user.phone || ''
       },
+      items: {
+        item_0: {
+          name: itemName,
+          quantity: 1,
+          unit_price: amount.toString(),
+          total_price: amount.toString(),
+          description: description
+        }
+      },
       actions: {
-        return_url: `${process.env.VITE_APP_URL}/payment/success?type=${type}&user_id=${userId}${annonceId ? `&listing_id=${annonceId}` : ''}`,
-        cancel_url: `${process.env.VITE_APP_URL}/payment/failure?type=${type}`,
-        callback_url: `${process.env.VITE_APP_URL}/.netlify/functions/paydunya-callback`
+        return_url: `${process.env.VITE_APP_URL || 'https://daloa-market.netlify.app'}/payment/success?type=${type}&user_id=${userId}${annonceId ? `&listing_id=${annonceId}` : ''}`,
+        cancel_url: `${process.env.VITE_APP_URL || 'https://daloa-market.netlify.app'}/payment/failure?type=${type}`,
+        callback_url: `${process.env.VITE_APP_URL || 'https://daloa-market.netlify.app'}/.netlify/functions/paydunya-callback`
       },
       custom_data: {
         user_id: userId,
@@ -127,9 +136,17 @@ exports.handler = async (event) => {
         listing_id: annonceId || null,
         boost_option: boostOption || null,
         credits: credits || null,
-        pack_name: packName || null
+        pack_name: packName || null,
+        app_name: 'DaloaMarket'
       }
     };
+
+    console.log('Création facture PayDunya:', {
+      amount,
+      type,
+      userId,
+      mode: PAYDUNYA_CONFIG.MODE
+    });
 
     // Appel à l'API PayDunya
     const response = await axios.post(
@@ -146,8 +163,13 @@ exports.handler = async (event) => {
       }
     );
 
+    console.log('Réponse PayDunya:', {
+      response_code: response.data.response_code,
+      token: response.data.token
+    });
+
     if (response.data.response_code !== '00') {
-      throw new Error(response.data.response_text || 'Erreur lors de la création de la facture');
+      throw new Error(response.data.response_text || 'Erreur lors de la création de la facture PayDunya');
     }
 
     // Enregistrer la transaction en base
@@ -178,13 +200,13 @@ exports.handler = async (event) => {
     };
 
   } catch (error) {
-    console.error('Erreur PayDunya:', error);
+    console.error('Erreur PayDunya:', error.response?.data || error.message);
     
     return {
       statusCode: 500,
       headers: CORS_HEADERS,
       body: JSON.stringify({
-        error: error.message || 'Erreur lors de la création du paiement'
+        error: error.response?.data?.response_text || error.message || 'Erreur lors de la création du paiement'
       })
     };
   }

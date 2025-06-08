@@ -31,43 +31,69 @@ exports.handler = async (event) => {
   }
 
   try {
+    console.log('Callback PayDunya reçu - Headers:', event.headers);
+    console.log('Callback PayDunya reçu - Body:', event.body);
+
     // PayDunya envoie les données en application/x-www-form-urlencoded
-    const body = event.body;
     let data;
     
     try {
       // Essayer de parser comme JSON d'abord
-      data = JSON.parse(body);
+      data = JSON.parse(event.body);
     } catch {
       // Si ce n'est pas du JSON, parser comme form data
-      const params = new URLSearchParams(body);
+      const params = new URLSearchParams(event.body);
       const dataParam = params.get('data');
       if (dataParam) {
         data = JSON.parse(dataParam);
       } else {
-        throw new Error('Format de données invalide');
+        // Essayer de récupérer directement les paramètres
+        const allParams = {};
+        for (const [key, value] of params.entries()) {
+          allParams[key] = value;
+        }
+        data = allParams;
       }
     }
 
-    console.log('Callback PayDunya reçu:', data);
+    console.log('Données callback parsées:', JSON.stringify(data, null, 2));
 
-    if (!data || !data.invoice) {
-      throw new Error('Données de facture manquantes');
+    if (!data) {
+      throw new Error('Aucune donnée reçue dans le callback');
     }
 
-    const invoice = data.invoice;
-    const customData = invoice.custom_data || {};
+    // Adapter selon le format des données reçues de PayDunya
+    let invoice, customData;
+    
+    if (data.invoice) {
+      invoice = data.invoice;
+      customData = invoice.custom_data || {};
+    } else if (data.status) {
+      // Format direct
+      invoice = data;
+      customData = data.custom_data || {};
+    } else {
+      throw new Error('Format de données callback invalide');
+    }
+
+    const paymentStatus = invoice.status;
+    const token = invoice.token;
+
+    console.log('Traitement callback:', {
+      status: paymentStatus,
+      token: token,
+      customData: customData
+    });
 
     // Vérifier le statut du paiement
-    if (invoice.status === 'completed') {
+    if (paymentStatus === 'completed') {
       // Mettre à jour la transaction
       const { error: updateTransactionError } = await supabase
         .from('transactions')
         .update({ 
-          status: 'completed',
-          paydunya_token: invoice.token 
+          status: 'completed'
         })
-        .eq('paydunya_token', invoice.token);
+        .eq('paydunya_token', token);
 
       if (updateTransactionError) {
         console.error('Erreur mise à jour transaction:', updateTransactionError);
@@ -76,6 +102,8 @@ exports.handler = async (event) => {
       // Traitement selon le type de paiement
       const paymentType = customData.type;
       const userId = customData.user_id;
+
+      console.log('Traitement paiement:', { paymentType, userId });
 
       if (paymentType === 'annonce' && customData.listing_id) {
         // Publier l'annonce
@@ -87,6 +115,8 @@ exports.handler = async (event) => {
 
         if (publishError) {
           console.error('Erreur publication annonce:', publishError);
+        } else {
+          console.log('Annonce publiée avec succès:', customData.listing_id);
         }
 
       } else if (paymentType === 'boost' && customData.listing_id) {
@@ -113,55 +143,45 @@ exports.handler = async (event) => {
 
         if (boostError) {
           console.error('Erreur application boost:', boostError);
+        } else {
+          console.log('Boost appliqué avec succès:', customData.listing_id);
         }
 
       } else if (paymentType === 'pack' && customData.credits) {
         // Ajouter les crédits
         const creditsToAdd = parseInt(customData.credits);
         
-        const { error: creditsError } = await supabase
-          .from('user_credits')
-          .upsert({
-            user_id: userId,
-            credits: creditsToAdd,
-            total_earned: creditsToAdd,
-            last_update: new Date().toISOString()
-          }, {
-            onConflict: 'user_id',
-            ignoreDuplicates: false
-          });
+        // Utiliser la fonction RPC pour ajouter les crédits
+        const { error: creditsError } = await supabase.rpc(
+          'add_user_credits',
+          { 
+            target_user_id: userId, 
+            credit_amount: creditsToAdd,
+            reason: `Achat pack ${customData.pack_name || creditsToAdd + ' crédits'}`
+          }
+        );
 
         if (creditsError) {
-          // Si upsert échoue, essayer une mise à jour
-          const { error: updateCreditsError } = await supabase.rpc(
-            'add_user_credits',
-            { 
-              target_user_id: userId, 
-              credit_amount: creditsToAdd,
-              reason: `Achat pack ${customData.pack_name || creditsToAdd + ' crédits'}`
-            }
-          );
-
-          if (updateCreditsError) {
-            console.error('Erreur ajout crédits:', updateCreditsError);
-          }
+          console.error('Erreur ajout crédits:', creditsError);
+        } else {
+          console.log('Crédits ajoutés avec succès:', { userId, credits: creditsToAdd });
         }
       }
 
       console.log(`Paiement ${paymentType} traité avec succès pour l'utilisateur ${userId}`);
 
-    } else if (invoice.status === 'cancelled' || invoice.status === 'failed') {
+    } else if (paymentStatus === 'cancelled' || paymentStatus === 'failed') {
       // Mettre à jour la transaction comme échouée
       const { error: updateTransactionError } = await supabase
         .from('transactions')
         .update({ status: 'failed' })
-        .eq('paydunya_token', invoice.token);
+        .eq('paydunya_token', token);
 
       if (updateTransactionError) {
         console.error('Erreur mise à jour transaction échouée:', updateTransactionError);
       }
 
-      console.log(`Paiement échoué/annulé pour le token ${invoice.token}`);
+      console.log(`Paiement échoué/annulé pour le token ${token}`);
     }
 
     return {
@@ -170,7 +190,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({ 
         success: true, 
         message: 'Callback traité avec succès',
-        status: invoice.status 
+        status: paymentStatus 
       })
     };
 
