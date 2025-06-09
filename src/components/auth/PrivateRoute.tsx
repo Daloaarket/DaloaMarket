@@ -17,12 +17,12 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   
   // If not authenticated, redirect to login
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login\" state={{ from: location }} replace />;
   }
   
   // If profile is required but not available, redirect to complete profile
   if (requireProfile && !userProfile) {
-    return <Navigate to="/complete-profile" state={{ from: location }} replace />;
+    return <Navigate to="/complete-profile\" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;
