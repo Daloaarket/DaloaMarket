@@ -104,7 +104,13 @@ function App() {
       <Route path="/help" element={<Layout><HelpPage /></Layout>} />
       
       {/* Achat Credits */}
-      <Route path="/acheter-credits" element={<Layout><AchatCreditsPage /></Layout>} />
+      <Route path="/acheter-credits" element={
+        <Layout>
+          <PrivateRoute requireProfile>
+            <AchatCreditsPage />
+          </PrivateRoute>
+        </Layout>
+      } />
       
       {/* 404 */}
       <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
