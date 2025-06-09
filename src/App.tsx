@@ -34,15 +34,15 @@ function App() {
       
       {/* Auth Routes */}
       <Route path="/login" element={
-        user ? <Navigate to="/\" replace /> : <Layout><LoginPage /></Layout>
+        user ? <Navigate to="/" replace /> : <Layout><LoginPage /></Layout>
       } />
       <Route path="/register" element={
-        user ? <Navigate to="/\" replace /> : <Layout><RegisterPage /></Layout>
+        user ? <Navigate to="/" replace /> : <Layout><RegisterPage /></Layout>
       } />
       <Route path="/complete-profile" element={
         <Layout>
           <PrivateRoute>
-            {userProfile ? <Navigate to="/\" replace /> : <CompleteProfilePage />}
+            {userProfile ? <Navigate to="/" replace /> : <CompleteProfilePage />}
           </PrivateRoute>
         </Layout>
       } />
