@@ -9,3 +9,21 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[context.production.environment]
+  SUPABASE_URL = "https://your-project-ref.supabase.co"
+  SUPABASE_ANON_KEY = "your-supabase-anon-key"
+  PAYDUNYA_MASTER_KEY = "your-paydunya-master-key"
+  PAYDUNYA_PRIVATE_KEY = "your-paydunya-private-key"
+  PAYDUNYA_PUBLIC_KEY = "your-paydunya-public-key"
+  PAYDUNYA_TOKEN = "your-paydunya-token"
+  PAYDUNYA_MODE = "live"
+
+[context.deploy-preview.environment]
+  SUPABASE_URL = "https://your-project-ref.supabase.co"
+  SUPABASE_ANON_KEY = "your-supabase-anon-key"
+  PAYDUNYA_MASTER_KEY = "your-paydunya-master-key"
+  PAYDUNYA_PRIVATE_KEY = "your-paydunya-private-key"
+  PAYDUNYA_PUBLIC_KEY = "your-paydunya-public-key"
+  PAYDUNYA_TOKEN = "your-paydunya-token"
+  PAYDUNYA_MODE = "test"
