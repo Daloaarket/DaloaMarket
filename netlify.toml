@@ -10,9 +10,6 @@
   to = "/index.html"
   status = 200
 
-[dev]
-  command = "npm run dev:vite"
-  functions = "netlify/functions"
-  publish = "dist"
-  port = 8888
-  targetPort = 5173
+# Disable edge functions if not needed
+[edge_functions]
+  # No edge functions defined - this prevents Netlify from trying to set up Deno
