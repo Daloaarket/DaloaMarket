@@ -45,6 +45,8 @@ export default {
         success: {
           DEFAULT: '#10B981',
           50: '#ECFDF5',
+          100: '#D1FAE5',
+          200: '#A7F3D0',
           500: '#10B981',
           600: '#059669',
         },
@@ -57,8 +59,12 @@ export default {
         warning: {
           DEFAULT: '#F59E0B',
           50: '#FFFBEB',
+          100: '#FEF3C7',
+          200: '#FDE68A',
           500: '#F59E0B',
           600: '#D97706',
+          700: '#B45309',
+          800: '#92400E',
         },
       },
       borderRadius: {
@@ -66,6 +72,8 @@ export default {
       },
       boxShadow: {
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+        'strong': '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
       },
       fontFamily: {
         sans: [
@@ -77,6 +85,28 @@ export default {
           'Segoe UI',
           'sans-serif',
         ],
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'slide-up': 'slideUp 0.6s ease-out',
+        'bounce-gentle': 'bounceGentle 2s infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(30px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        bounceGentle: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-5px)' },
+        },
+      },
+      backdropBlur: {
+        xs: '2px',
       },
     },
   },
