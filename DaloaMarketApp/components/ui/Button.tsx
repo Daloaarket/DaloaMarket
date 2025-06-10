@@ -53,7 +53,7 @@ export const Button: React.FC<ButtonProps> = ({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === 'outline' ? '#374151' : '#FFFFFF'} />
+        <ActivityIndicator size="small\" color={variant === 'outline' ? '#374151' : '#FFFFFF'} />
       ) : (
         <Text className={getTextStyle()}>{title}</Text>
       )}

@@ -42,7 +42,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
         {/* Boost Badge */}
         {isBoostActive && (
           <View className="absolute top-3 left-3 bg-primary rounded-full px-3 py-1 flex-row items-center">
-            <Ionicons name="flash" size={12} color="white" />
+            <Ionicons name="flash\" size={12} color="white" />
             <Text className="text-white text-xs font-bold ml-1">Sponsorisé</Text>
           </View>
         )}

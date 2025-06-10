@@ -215,7 +215,7 @@ export default function CreateScreen() {
   if (!user) {
     return (
       <View className="flex-1 justify-center items-center bg-grey-50 px-6">
-        <Ionicons name="person-outline" size={64} color="#9CA3AF" />
+        <Ionicons name="person-outline\" size={64} color="#9CA3AF" />
         <Text className="text-xl font-bold mt-4 mb-2">Connexion requise</Text>
         <Text className="text-grey-600 text-center mb-6">
           Vous devez être connecté pour publier une annonce
