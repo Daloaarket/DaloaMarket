@@ -8,7 +8,10 @@ import {
   AlertCircle, 
   Info, 
   CheckCircle2,
-  CreditCard
+  CreditCard,
+  ArrowLeft,
+  Camera,
+  FileText
 } from 'lucide-react';
 import { useSupabase } from '../../hooks/useSupabase';
 import { supabase } from '../../lib/supabase';
@@ -30,46 +33,28 @@ interface ListingFormData {
   category: string;
   condition: string;
   district: string;
-  boostOption: '' | '24h' | '7d' | '30d';
 }
 
-const BOOST_PRICES = {
-  '24h': 300,
-  '7d': 800,
-  '30d': 2500,
-};
-
-const LISTING_FEE = 200;
-
 const ListingCreatePage: React.FC = () => {
-  const { user } = useSupabase();
+  const { user, userProfile } = useSupabase();
   const navigate = useNavigate();
   const location = useLocation();
-  const prefillListing: Listing | undefined = location.state as Listing | undefined;
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [photoErrors, setPhotoErrors] = useState<string | null>(null);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
-  const [removedExistingPhotos, setRemovedExistingPhotos] = useState<number[]>([]);
   const [isUserVerified, setIsUserVerified] = useState(false);
   const [isCheckingUser, setIsCheckingUser] = useState(true);
   const [isFirstListing, setIsFirstListing] = useState<boolean | null>(null);
   const [userCredits, setUserCredits] = useState<number | null>(null);
+  const [showPaymentInfo, setShowPaymentInfo] = useState(false);
   
   const {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors }
   } = useForm<ListingFormData>();
-  
-  const boostOption = watch('boostOption', '');
-  const boostPrice = boostOption ? BOOST_PRICES[boostOption] : 0;
-  // Calcul du prix total à payer (hors crédits)
-  // On ne facture les 200F que si l'utilisateur n'a pas de crédits ET ce n'est pas la première annonce
-  const mustPayListingFee = !isFirstListing && (!userCredits || userCredits <= 0);
-  const totalPrice = (mustPayListingFee ? LISTING_FEE : 0) + boostPrice;
   
   useEffect(() => {
     const verifyUser = async () => {
@@ -100,48 +85,6 @@ const ListingCreatePage: React.FC = () => {
   }, [user]);
   
   useEffect(() => {
-    if (prefillListing && prefillListing.id) {
-      // Pré-remplir le formulaire avec les données de l'annonce en attente
-      reset({
-        title: prefillListing.title,
-        description: prefillListing.description,
-        price: prefillListing.price,
-        category: prefillListing.category,
-        condition: prefillListing.condition,
-        district: prefillListing.district,
-        boostOption: prefillListing.boosted_until ? '' : '', // TODO: améliorer la gestion du boost si besoin
-      });
-      // Pré-remplir les photos dans l'état local pour la validation
-      setPhotoFiles([]); // On ne pré-remplit PAS les File, on gère les URLs existantes séparément
-      setRemovedExistingPhotos([]);
-    }
-  }, [prefillListing, reset]);
-
-  // Ajout : suppression automatique des annonces en attente de paiement dupliquées
-  useEffect(() => {
-    const cleanPendingDuplicates = async () => {
-      if (!user?.id || !prefillListing?.id) return;
-      // Supprime toutes les autres annonces en attente de paiement avec le même titre, prix, catégorie, etc. sauf celle en cours
-      const { data: pendings, error } = await supabase
-        .from('listings')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('status', 'pending')
-        .eq('title', prefillListing.title)
-        .eq('price', prefillListing.price)
-        .eq('category', prefillListing.category)
-        .eq('condition', prefillListing.condition)
-        .eq('district', prefillListing.district)
-        .neq('id', prefillListing.id);
-      if (!error && pendings && pendings.length > 0) {
-        const idsToDelete = pendings.map(l => l.id);
-        await supabase.from('listings').delete().in('id', idsToDelete);
-      }
-    };
-    cleanPendingDuplicates();
-  }, [user, prefillListing]);
-  
-  useEffect(() => {
     const checkFirstListing = async () => {
       if (!user?.id) {
         setIsFirstListing(null);
@@ -161,7 +104,7 @@ const ListingCreatePage: React.FC = () => {
     checkFirstListing();
   }, [user]);
   
-  // Récupérer le solde de crédits à l'ouverture (contournement typage)
+  // Récupérer le solde de crédits à l'ouverture
   useEffect(() => {
     const fetchCredits = async () => {
       if (!user?.id) {
@@ -183,7 +126,7 @@ const ListingCreatePage: React.FC = () => {
     fetchCredits();
   }, [user]);
   
-  // Fonction pour décrémenter le crédit (contournement typage)
+  // Fonction pour décrémenter le crédit
   const decrementCredit = async () => {
     if (!user?.id) return false;
     // @ts-expect-error appel RPC custom
@@ -217,28 +160,16 @@ const ListingCreatePage: React.FC = () => {
       }
       
       setPhotoErrors(null);
-      
       setPhotoFiles(prev => [...prev, ...acceptedFiles]);
     }
   });
   
-  // Gestion suppression image existante
-  const handleRemoveExistingPhoto = (index: number) => {
-    setRemovedExistingPhotos((prev) => [...prev, index]);
-  };
-  // Gestion suppression image nouvelle
-  const handleRemoveNewPhoto = (index: number) => {
-    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
+  const handleRemovePhoto = (index: number) => {
+    setPhotoFiles(prev => prev.filter((_, i) => i !== index));
   };
   
   const uploadPhotos = async (): Promise<string[]> => {
-    // On conserve les anciennes photos non supprimées + les nouvelles uploadées
-    let existingUrls: string[] = [];
-    if (prefillListing && prefillListing.photos) {
-      existingUrls = prefillListing.photos.filter((_, idx) => !removedExistingPhotos.includes(idx));
-    }
-    
-    if (photoFiles.length === 0 && existingUrls.length === 0) {
+    if (photoFiles.length === 0) {
       throw new Error('Veuillez ajouter au moins une photo');
     }
     
@@ -264,7 +195,7 @@ const ListingCreatePage: React.FC = () => {
         
         uploadedUrls.push(publicUrl);
       }
-      return [...existingUrls, ...uploadedUrls];
+      return uploadedUrls;
     } catch (error) {
       console.error('Error uploading photos:', error);
       if (error instanceof Error) {
@@ -277,37 +208,23 @@ const ListingCreatePage: React.FC = () => {
     }
   };
   
-  const saveListing = async (formData: ListingFormData, photoUrls: string[]) => {
+  const saveListing = async (formData: ListingFormData, photoUrls: string[], status: 'active' | 'pending' = 'active') => {
     if (!user?.id || !isUserVerified) {
       throw new Error("Votre compte n'est pas correctement configuré");
-    }
-    
-    let boostedUntil = null;
-    if (formData.boostOption) {
-      const now = new Date();
-      if (formData.boostOption === '24h') {
-        now.setDate(now.getDate() + 1);
-      } else if (formData.boostOption === '7d') {
-        now.setDate(now.getDate() + 7);
-      } else if (formData.boostOption === '30d') {
-        now.setDate(now.getDate() + 30);
-      }
-      boostedUntil = now.toISOString();
     }
     
     const { data, error } = await supabase
       .from('listings')
       .insert({
         user_id: user.id,
-        title: formData.title,
-        description: formData.description,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
         price: formData.price,
         category: formData.category,
         condition: formData.condition,
         district: formData.district,
         photos: photoUrls,
-        boosted_until: boostedUntil,
-        status: 'pending' // <<--- ANNONCE EN ATTENTE PAIEMENT
+        status: status
       })
       .select()
       .single();
@@ -317,123 +234,51 @@ const ListingCreatePage: React.FC = () => {
     return data;
   };
   
-  const processPayment = async (formData: ListingFormData, paymentType: 'annonce' | 'boost' | 'pack' = 'annonce', packInfo?: { credits: number, packName: string }) => {
-    try {
-      let listingId = prefillListing?.id;
-      let photoUrls = prefillListing?.photos || [];
-      // Si pas d'annonce existante, upload et création
-      if (!listingId && paymentType !== 'pack') {
-        photoUrls = await uploadPhotos();
-        const listing = await saveListing(formData, photoUrls);
-        listingId = listing.id;
-      }
-      // Préparation du body selon le type de paiement
-      const body: Record<string, unknown> = {
-        userId: user?.id,
-        type: paymentType,
-      };
-      if (paymentType === 'annonce' || paymentType === 'boost') {
-        body.annonceId = listingId;
-        if (paymentType === 'boost') {
-          body.boostOption = formData.boostOption;
-        }
-      } else if (paymentType === 'pack' && packInfo) {
-        body.credits = packInfo.credits;
-        body.packName = packInfo.packName;
-      }
-      
-      // Appel à la nouvelle fonction PayDunya
-      const response = await fetch('/.netlify/functions/paydunya-create-invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok || !data.checkout_url) {
-        throw new Error(data.error || 'Erreur lors de la création du paiement');
-      }
-      
-      // Rediriger vers PayDunya
-      window.location.href = data.checkout_url;
-      
-    } catch (error) {
-      console.error('Payment processing error:', error);
-      if (error instanceof Error) {
-        toast.error(error.message || 'Erreur lors du traitement du paiement');
-      } else {
-        toast.error('Erreur lors du traitement du paiement');
-      }
-      setIsLoading(false);
-    }
-  };
-  
   const onSubmit = async (data: ListingFormData) => {
-    // Validation stricte : au moins une image (ancienne non supprimée OU nouvelle)
-    const existingCount = prefillListing && prefillListing.photos ? prefillListing.photos.length - removedExistingPhotos.length : 0;
-    if (existingCount + photoFiles.length === 0) {
+    // Validation stricte : au moins une image
+    if (photoFiles.length === 0) {
       setPhotoErrors('Veuillez ajouter au moins une photo');
       return;
     }
     setPhotoErrors(null);
     setIsLoading(true);
 
-    // Cas 1 : Boost => paiement direct (inchangé)
-    if (data.boostOption) {
-      await processPayment(data, 'boost');
-      return;
-    }
+    try {
+      // Upload des photos
+      const photoUrls = await uploadPhotos();
 
-    // Cas 2 : Première annonce gratuite
-    if (isFirstListing) {
-      try {
-        let listingId = prefillListing?.id;
-        let photoUrls = prefillListing?.photos || [];
-        if (!listingId) {
-          photoUrls = await uploadPhotos();
-          const listing = await saveListing(data, photoUrls);
-          listingId = listing.id;
-        }
-        await supabase.from('listings').update({ status: 'active' }).eq('id', listingId);
+      // Cas 1 : Première annonce gratuite
+      if (isFirstListing) {
+        const listing = await saveListing(data, photoUrls, 'active');
         toast.success('Votre première annonce a été publiée gratuitement !');
-        navigate(`/listings/${listingId}`);
-      } catch {
-        toast.error("Erreur lors de la publication de l'annonce");
-      } finally {
-        setIsLoading(false);
+        navigate(`/listings/${listing.id}`);
+        return;
       }
-      return;
-    }
 
-    // Cas 3 : Utilisateur a des crédits
-    if (userCredits && userCredits > 0) {
-      try {
-        let listingId = prefillListing?.id;
-        let photoUrls = prefillListing?.photos || [];
-        if (!listingId) {
-          photoUrls = await uploadPhotos();
-          const listing = await saveListing(data, photoUrls);
-          listingId = listing.id;
-        }
+      // Cas 2 : Utilisateur a des crédits
+      if (userCredits && userCredits > 0) {
         const decremented = await decrementCredit();
         if (!decremented) {
           toast.error('Erreur lors de la consommation du crédit.');
           setIsLoading(false);
           return;
         }
-        await supabase.from('listings').update({ status: 'active' }).eq('id', listingId);
+        const listing = await saveListing(data, photoUrls, 'active');
         toast.success('Annonce publiée ! 1 crédit consommé.');
-        navigate(`/listings/${listingId}`);
-      } catch {
-        toast.error("Erreur lors de la publication de l'annonce");
-        setIsLoading(false);
+        navigate(`/listings/${listing.id}`);
+        return;
       }
-      return;
-    }
 
-    // Cas 4 : Pas de crédits => paiement à l'unité (200F)
-    await processPayment(data, 'annonce');
+      // Cas 3 : Pas de crédits => afficher les options de paiement
+      const listing = await saveListing(data, photoUrls, 'pending');
+      setShowPaymentInfo(true);
+      
+    } catch (error) {
+      console.error('Error creating listing:', error);
+      toast.error('Erreur lors de la création de l\'annonce');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   if (isCheckingUser) {
@@ -465,360 +310,485 @@ const ListingCreatePage: React.FC = () => {
       </div>
     );
   }
-  
-  return (
-    <div className="min-h-screen bg-grey-50 py-8">
-      <div className="container-custom max-w-3xl">
-        <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden border border-primary-100">
-          {/* Header visuel */}
-          <div className="bg-gradient-to-r from-primary-600 to-primary-400 px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-3xl font-extrabold text-white drop-shadow mb-2 sm:mb-0">Publier une annonce</h1>
-            {user && (
-              <div className="flex items-center gap-4">
-                <span className="bg-white/20 text-white px-4 py-2 rounded-full font-semibold text-lg shadow">Crédits : <span className="font-bold">{userCredits === null ? '...' : userCredits}</span></span>
+
+  // Modal d'information de paiement
+  if (showPaymentInfo) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-grey-50 to-grey-100">
+        {/* Mobile Header */}
+        <div className="lg:hidden bg-white shadow-sm sticky top-0 z-10">
+          <div className="flex items-center px-4 py-3">
+            <button 
+              onClick={() => navigate('/profile')}
+              className="p-2 -ml-2 rounded-xl hover:bg-grey-100 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 text-grey-600" />
+            </button>
+            <h1 className="ml-3 text-lg font-semibold text-grey-900">Annonce créée</h1>
+          </div>
+        </div>
+
+        <div className="container-custom py-4 lg:py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-2xl lg:rounded-3xl shadow-xl p-6 lg:p-8 text-center">
+              <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-4 lg:mb-6">
+                <CheckCircle2 className="h-8 w-8 lg:h-10 lg:w-10 text-green-600" />
+              </div>
+              
+              <h2 className="text-xl lg:text-2xl font-bold text-grey-900 mb-3 lg:mb-4">
+                Annonce créée avec succès !
+              </h2>
+              
+              <p className="text-grey-600 mb-6 lg:mb-8 text-base lg:text-lg leading-relaxed">
+                Votre annonce a été créée mais n'est pas encore visible. Pour la publier, vous devez soit acheter des crédits, soit payer 200 FCFA.
+              </p>
+
+              {/* Options de paiement */}
+              <div className="space-y-4 mb-6 lg:mb-8">
+                <div className="bg-gradient-to-r from-primary-50 to-orange-50 rounded-xl p-4 lg:p-6 border border-primary-200">
+                  <h3 className="font-semibold text-primary-800 mb-2 lg:mb-3">Option 1 : Acheter des crédits</h3>
+                  <p className="text-primary-700 text-sm lg:text-base mb-3 lg:mb-4">
+                    Achetez un pack de crédits pour publier plusieurs annonces
+                  </p>
+                  <button
+                    onClick={() => navigate('/acheter-credits')}
+                    className="w-full bg-gradient-to-r from-primary to-orange-500 text-white font-semibold py-2.5 lg:py-3 px-4 lg:px-6 rounded-lg lg:rounded-xl hover:from-primary-600 hover:to-orange-600 transition-all duration-200 text-sm lg:text-base"
+                  >
+                    Acheter des crédits
+                  </button>
+                </div>
+
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 lg:p-6 border border-blue-200">
+                  <h3 className="font-semibold text-blue-800 mb-2 lg:mb-3">Option 2 : Paiement unique (200 FCFA)</h3>
+                  <p className="text-blue-700 text-sm lg:text-base mb-3 lg:mb-4">
+                    Payez uniquement pour cette annonce
+                  </p>
+                  
+                  <div className="bg-white rounded-lg p-3 lg:p-4 mb-3 lg:mb-4 text-left">
+                    <p className="text-sm lg:text-base text-grey-700 mb-2">
+                      <strong>Orange Money / MTN :</strong> +225 07 88 00 08 31
+                    </p>
+                    <p className="text-sm lg:text-base text-grey-700">
+                      <strong>Nom :</strong> Oulobo Elmas Tresor
+                    </p>
+                  </div>
+                  
+                  <p className="text-xs lg:text-sm text-blue-600 mb-3 lg:mb-4">
+                    Après le paiement, envoyez la capture d'écran via WhatsApp au même numéro avec votre email pour identification.
+                  </p>
+                  
+                  <a
+                    href="https://wa.me/2250788000831?text=Bonjour,%20j'ai%20effectué%20le%20paiement%20de%20200%20FCFA%20pour%20publier%20mon%20annonce.%20Voici%20ma%20capture%20d'écran%20et%20mon%20email%20:"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-green-600 text-white font-semibold py-2.5 lg:py-3 px-4 lg:px-6 rounded-lg lg:rounded-xl hover:bg-green-700 transition-all duration-200 text-sm lg:text-base inline-block"
+                  >
+                    Envoyer via WhatsApp
+                  </a>
+                </div>
+              </div>
+
+              <div className="space-y-3">
                 <button
-                  type="button"
-                  className="btn-outline border-white text-white hover:bg-white/10 hover:text-white"
-                  onClick={() => navigate('/acheter-credits')}
+                  onClick={() => navigate('/profile')}
+                  className="w-full border-2 border-grey-300 text-grey-700 font-semibold py-2.5 lg:py-3 px-4 lg:px-6 rounded-lg lg:rounded-xl hover:border-grey-400 hover:bg-grey-50 transition-all duration-200 text-sm lg:text-base"
                 >
-                  Acheter des crédits
+                  Voir mes annonces
+                </button>
+                
+                <button
+                  onClick={() => navigate('/')}
+                  className="w-full text-grey-600 hover:text-grey-900 transition-colors text-sm lg:text-base"
+                >
+                  Retour à l'accueil
                 </button>
               </div>
-            )}
+
+              {/* Info */}
+              <div className="mt-6 lg:mt-8 p-3 lg:p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="flex items-start gap-2 lg:gap-3">
+                  <AlertCircle className="h-4 w-4 lg:h-5 lg:w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs lg:text-sm text-yellow-800">
+                    <p className="font-medium mb-1">Traitement manuel</p>
+                    <p>Votre annonce sera publiée dans les 24h après réception du paiement.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-grey-50 to-grey-100">
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-white shadow-sm sticky top-0 z-10">
+        <div className="flex items-center px-4 py-3">
+          <button 
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 rounded-xl hover:bg-grey-100 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 text-grey-600" />
+          </button>
+          <h1 className="ml-3 text-lg font-semibold text-grey-900">Publier une annonce</h1>
+        </div>
+      </div>
+
+      <div className="container-custom py-4 lg:py-8">
+        <div className="max-w-3xl mx-auto">
+          {/* Desktop Header */}
+          <div className="hidden lg:block mb-8">
+            <button 
+              onClick={() => navigate(-1)}
+              className="flex items-center text-grey-600 hover:text-grey-900 transition-colors mb-4"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              Retour
+            </button>
+            <h1 className="text-3xl font-bold text-grey-900">Publier une annonce</h1>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 px-8 py-10">
-            {/* Photos */}
-            <div>
-              <label className="input-label text-lg font-semibold mb-2 block">Photos <span className="text-grey-500 font-normal">(max 5)</span></label>
-              <div {...getRootProps()} className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-colors bg-grey-50 hover:bg-primary-50/40 ${photoErrors ? 'border-error-500 bg-error-50' : 'border-primary-200'}`}
-              >
-                <input {...getInputProps()} />
-                <Upload className="h-12 w-12 text-primary mx-auto mb-3" />
-                <p className="text-grey-700 text-lg font-medium">Glissez-déposez vos photos ici, ou cliquez pour sélectionner</p>
-                <p className="text-sm text-grey-500 mt-1">Formats acceptés : JPG, PNG, WEBP (max 5MB)</p>
-              </div>
-              <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                {/* Images déjà présentes dans l'annonce (prefillListing.photos) */}
-                {prefillListing && prefillListing.photos && prefillListing.photos.map((photo, index) => (
-                  removedExistingPhotos.includes(index) ? null : (
-                    <div key={"existing-"+index} className="relative aspect-square rounded-xl overflow-hidden group shadow border border-grey-200">
-                      <img src={photo} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
-                      <button type="button" onClick={() => handleRemoveExistingPhoto(index)}
-                        className="absolute top-1 right-1 bg-white/80 hover:bg-error-500 hover:text-white text-error-500 rounded-full p-1 shadow transition-colors z-10 group-hover:opacity-100 opacity-80">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
-                    </div>
-                  )
-                ))}
-                {/* Images nouvellement ajoutées (photoFiles) */}
-                {photoFiles.map((file, index) => (
-                  <div key={"new-"+index} className="relative aspect-square rounded-xl overflow-hidden group shadow border border-primary-200">
-                    <img src={URL.createObjectURL(file)} alt={`Preview ajoutée ${index + 1}`} className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => handleRemoveNewPhoto(index)}
-                      className="absolute top-1 right-1 bg-white/80 hover:bg-error-500 hover:text-white text-error-500 rounded-full p-1 shadow transition-colors z-10 group-hover:opacity-100 opacity-80">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-              {photoErrors && (
-                <p className="input-error flex items-center mt-2 text-lg">
-                  <AlertCircle className="h-5 w-5 mr-2" />
-                  {photoErrors}
-                </p>
+          <div className="bg-white rounded-2xl lg:rounded-3xl shadow-xl overflow-hidden border border-primary-100">
+            {/* Header visuel */}
+            <div className="bg-gradient-to-r from-primary-600 to-primary-400 px-4 lg:px-8 py-6 lg:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <h1 className="text-2xl lg:text-3xl font-extrabold text-white drop-shadow mb-2 sm:mb-0">Publier une annonce</h1>
+              {user && (
+                <div className="flex items-center gap-3 lg:gap-4">
+                  <span className="bg-white/20 text-white px-3 lg:px-4 py-1.5 lg:py-2 rounded-full font-semibold text-sm lg:text-lg shadow">
+                    Crédits : <span className="font-bold">{userCredits === null ? '...' : userCredits}</span>
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-outline border-white text-white hover:bg-white/10 hover:text-white text-sm lg:text-base py-1.5 lg:py-2 px-3 lg:px-4"
+                    onClick={() => navigate('/acheter-credits')}
+                  >
+                    Acheter des crédits
+                  </button>
+                </div>
               )}
             </div>
-            
-            {/* Title */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 lg:space-y-10 px-4 lg:px-8 py-6 lg:py-10">
+              {/* Photos */}
               <div>
-                <label htmlFor="title" className="input-label text-lg font-semibold mb-2 block">Titre de l'annonce</label>
-                <input
-                  id="title"
-                  type="text"
-                  className={`input-field text-lg px-5 py-3 rounded-xl shadow-sm ${errors.title ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''}`}
-                  placeholder="Ex: Manette PS4 en très bon état"
-                  {...register('title', { 
-                    required: 'Le titre est requis',
-                    minLength: {
-                      value: 5,
-                      message: 'Le titre doit contenir au moins 5 caractères'
-                    },
-                    maxLength: {
-                      value: 100,
-                      message: 'Le titre ne doit pas dépasser 100 caractères'
-                    }
-                  })}
-                  disabled={isLoading}
-                />
-                {errors.title && (
-                  <p className="input-error flex items-center mt-2 text-base">
-                    <AlertCircle className="h-5 w-5 mr-2" />
-                    {errors.title.message}
+                <label className="input-label text-base lg:text-lg font-semibold mb-2 block">
+                  Photos <span className="text-grey-500 font-normal">(max 5)</span>
+                </label>
+                <div 
+                  {...getRootProps()} 
+                  className={`border-2 border-dashed rounded-xl lg:rounded-2xl p-6 lg:p-8 text-center cursor-pointer transition-colors bg-grey-50 hover:bg-primary-50/40 ${
+                    photoErrors ? 'border-error-500 bg-error-50' : 'border-primary-200'
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  <Upload className="h-10 w-10 lg:h-12 lg:w-12 text-primary mx-auto mb-3" />
+                  <p className="text-grey-700 text-base lg:text-lg font-medium">
+                    Glissez-déposez vos photos ici, ou cliquez pour sélectionner
+                  </p>
+                  <p className="text-sm lg:text-base text-grey-500 mt-1">
+                    Formats acceptés : JPG, PNG, WEBP (max 5MB)
+                  </p>
+                </div>
+                
+                <div className="mt-4 lg:mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-4">
+                  {photoFiles.map((file, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg lg:rounded-xl overflow-hidden group shadow border border-grey-200">
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        alt={`Preview ${index + 1}`} 
+                        className="w-full h-full object-cover" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemovePhoto(index)}
+                        className="absolute top-1 right-1 bg-white/80 hover:bg-error-500 hover:text-white text-error-500 rounded-full p-1 shadow transition-colors z-10 group-hover:opacity-100 opacity-80"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 lg:h-5 lg:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                {photoErrors && (
+                  <p className="input-error flex items-center mt-2 text-sm lg:text-base">
+                    <AlertCircle className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                    {photoErrors}
                   </p>
                 )}
               </div>
-              {/* Price */}
-              <div>
-                <label htmlFor="price" className="input-label text-lg font-semibold mb-2 block">Prix (FCFA)</label>
-                <div className="relative">
+              
+              {/* Title and Price */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
+                <div>
+                  <label htmlFor="title" className="input-label text-base lg:text-lg font-semibold mb-2 block">
+                    Titre de l'annonce
+                  </label>
                   <input
-                    id="price"
-                    type="number"
-                    className={`input-field text-lg px-5 py-3 rounded-xl shadow-sm pr-20 ${errors.price ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''}`}
-                    placeholder="Ex: 15000"
-                    {...register('price', { 
-                      required: 'Le prix est requis',
-                      min: {
-                        value: 200,
-                        message: 'Le prix minimum est de 200 FCFA'
+                    id="title"
+                    type="text"
+                    className={`input-field text-base lg:text-lg px-4 lg:px-5 py-3 rounded-lg lg:rounded-xl shadow-sm ${
+                      errors.title ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''
+                    }`}
+                    placeholder="Ex: Manette PS4 en très bon état"
+                    {...register('title', { 
+                      required: 'Le titre est requis',
+                      minLength: {
+                        value: 5,
+                        message: 'Le titre doit contenir au moins 5 caractères'
                       },
-                      max: {
-                        value: 10000000,
-                        message: 'Le prix maximum est de 10 000 000 FCFA'
+                      maxLength: {
+                        value: 100,
+                        message: 'Le titre ne doit pas dépasser 100 caractères'
                       }
                     })}
                     disabled={isLoading}
                   />
-                  <span className="absolute right-4 top-3 text-grey-500 font-bold text-lg">FCFA</span>
+                  {errors.title && (
+                    <p className="input-error flex items-center mt-2 text-sm lg:text-base">
+                      <AlertCircle className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                      {errors.title.message}
+                    </p>
+                  )}
                 </div>
-                {errors.price && (
-                  <p className="input-error flex items-center mt-2 text-base">
-                    <AlertCircle className="h-5 w-5 mr-2" />
-                    {errors.price.message}
-                  </p>
-                )}
+                
+                <div>
+                  <label htmlFor="price" className="input-label text-base lg:text-lg font-semibold mb-2 block">
+                    Prix (FCFA)
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="price"
+                      type="number"
+                      className={`input-field text-base lg:text-lg px-4 lg:px-5 py-3 rounded-lg lg:rounded-xl shadow-sm pr-16 lg:pr-20 ${
+                        errors.price ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''
+                      }`}
+                      placeholder="Ex: 15000"
+                      {...register('price', { 
+                        required: 'Le prix est requis',
+                        min: {
+                          value: 200,
+                          message: 'Le prix minimum est de 200 FCFA'
+                        },
+                        max: {
+                          value: 10000000,
+                          message: 'Le prix maximum est de 10 000 000 FCFA'
+                        }
+                      })}
+                      disabled={isLoading}
+                    />
+                    <span className="absolute right-3 lg:right-4 top-3 text-grey-500 font-bold text-base lg:text-lg">
+                      FCFA
+                    </span>
+                  </div>
+                  {errors.price && (
+                    <p className="input-error flex items-center mt-2 text-sm lg:text-base">
+                      <AlertCircle className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                      {errors.price.message}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="input-label text-lg font-semibold mb-2 block">Description</label>
-              <textarea
-                id="description"
-                rows={5}
-                className={`input-field text-lg px-5 py-3 rounded-xl shadow-sm ${errors.description ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''}`}
-                placeholder="Décrivez votre article en détail (état, caractéristiques, raison de la vente...)"
-                {...register('description', { 
-                  required: 'La description est requise',
-                  minLength: {
-                    value: 20,
-                    message: 'La description doit contenir au moins 20 caractères'
-                  }
-                })}
-                disabled={isLoading}
-              ></textarea>
-              {errors.description && (
-                <p className="input-error flex items-center mt-2 text-base">
-                  <AlertCircle className="h-5 w-5 mr-2" />
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-            
-            {/* Category and Condition */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              {/* Description */}
               <div>
-                <label htmlFor="category" className="input-label text-lg font-semibold mb-2 block">Catégorie</label>
-                <select
-                  id="category"
-                  className={`input-field text-lg px-5 py-3 rounded-xl shadow-sm ${errors.category ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''}`}
-                  {...register('category', { 
-                    required: 'La catégorie est requise'
+                <label htmlFor="description" className="input-label text-base lg:text-lg font-semibold mb-2 block">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  rows={4}
+                  className={`input-field text-base lg:text-lg px-4 lg:px-5 py-3 rounded-lg lg:rounded-xl shadow-sm ${
+                    errors.description ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''
+                  }`}
+                  placeholder="Décrivez votre article en détail (état, caractéristiques, raison de la vente...)"
+                  {...register('description', { 
+                    required: 'La description est requise',
+                    minLength: {
+                      value: 20,
+                      message: 'La description doit contenir au moins 20 caractères'
+                    }
                   })}
                   disabled={isLoading}
-                >
-                  <option value="">Sélectionnez une catégorie</option>
-                  {CATEGORIES.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.category && (
-                  <p className="input-error flex items-center mt-2 text-base">
-                    <AlertCircle className="h-5 w-5 mr-2" />
-                    {errors.category.message}
+                ></textarea>
+                {errors.description && (
+                  <p className="input-error flex items-center mt-2 text-sm lg:text-base">
+                    <AlertCircle className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                    {errors.description.message}
                   </p>
                 )}
               </div>
-              <div>
-                <label htmlFor="condition" className="input-label text-lg font-semibold mb-2 block">État</label>
-                <select
-                  id="condition"
-                  className={`input-field text-lg px-5 py-3 rounded-xl shadow-sm ${errors.condition ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''}`}
-                  {...register('condition', { 
-                    required: 'L\'état est requis'
-                  })}
-                  disabled={isLoading}
-                >
-                  <option value="">Sélectionnez l'état</option>
-                  {CONDITIONS.map((condition) => (
-                    <option key={condition.id} value={condition.id}>
-                      {condition.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.condition && (
-                  <p className="input-error flex items-center mt-2 text-base">
-                    <AlertCircle className="h-5 w-5 mr-2" />
-                    {errors.condition.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {/* District */}
-            <div>
-              <label htmlFor="district" className="input-label text-lg font-semibold mb-2 block">Quartier à Daloa</label>
-              <select
-                id="district"
-                className={`input-field text-lg px-5 py-3 rounded-xl shadow-sm ${errors.district ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''}`}
-                {...register('district', { 
-                  required: 'Le quartier est requis'
-                })}
-                disabled={isLoading}
-              >
-                <option value="">Sélectionnez votre quartier</option>
-                {DISTRICTS.map((district) => (
-                  <option key={district} value={district}>
-                    {district}
-                  </option>
-                ))}
-              </select>
-              {errors.district && (
-                <p className="input-error flex items-center mt-2 text-base">
-                  <AlertCircle className="h-5 w-5 mr-2" />
-                  {errors.district.message}
-                </p>
-              )}
-            </div>
-            
-            {/* Boost Options */}
-            <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-2xl p-8 border border-primary-200 shadow-sm">
-              <h3 className="text-xl font-bold mb-6 text-primary">Options de boost</h3>
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="boost-none"
-                    value=""
-                    className="h-5 w-5 text-primary focus:ring-primary-500"
-                    {...register('boostOption')}
-                    disabled={isLoading}
-                  />
-                  <label htmlFor="boost-none" className="ml-3 block text-grey-800 text-lg font-medium">
-                    Aucun boost
+              
+              {/* Category and Condition */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
+                <div>
+                  <label htmlFor="category" className="input-label text-base lg:text-lg font-semibold mb-2 block">
+                    Catégorie
                   </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="boost-24h"
-                    value="24h"
-                    className="h-5 w-5 text-primary focus:ring-primary-500"
-                    {...register('boostOption')}
+                  <select
+                    id="category"
+                    className={`input-field text-base lg:text-lg px-4 lg:px-5 py-3 rounded-lg lg:rounded-xl shadow-sm ${
+                      errors.category ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''
+                    }`}
+                    {...register('category', { 
+                      required: 'La catégorie est requise'
+                    })}
                     disabled={isLoading}
-                  />
-                  <label htmlFor="boost-24h" className="ml-3 block text-grey-800 text-lg font-medium">
-                    Boost 24h <span className="font-semibold">{formatPrice(BOOST_PRICES['24h'])}</span>
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="boost-7d"
-                    value="7d"
-                    className="h-5 w-5 text-primary focus:ring-primary-500"
-                    {...register('boostOption')}
-                    disabled={isLoading}
-                  />
-                  <label htmlFor="boost-7d" className="ml-3 block text-grey-800 text-lg font-medium">
-                    Boost 7 jours <span className="font-semibold">{formatPrice(BOOST_PRICES['7d'])}</span>
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="boost-30d"
-                    value="30d"
-                    className="h-5 w-5 text-primary focus:ring-primary-500"
-                    {...register('boostOption')}
-                    disabled={isLoading}
-                  />
-                  <label htmlFor="boost-30d" className="ml-3 block text-grey-800 text-lg font-medium">
-                    Boost 30 jours <span className="font-semibold">{formatPrice(BOOST_PRICES['30d'])}</span>
-                  </label>
-                </div>
-              </div>
-              <div className="mt-6 text-base text-grey-700 flex items-start gap-2 bg-white/60 rounded-lg p-4 border border-primary-100">
-                <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>
-                  Les annonces boostées apparaissent en haut des résultats de recherche et sont marquées comme "Sponsorisées".
-                </span>
-              </div>
-            </div>
-            
-            {/* Payment Summary */}
-            <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-2xl p-8 border border-primary-200 shadow-sm">
-              <h3 className="text-xl font-bold mb-6 text-primary">Récapitulatif</h3>
-              <div className="space-y-4">
-                {mustPayListingFee && (
-                  <div className="flex justify-between items-center text-lg">
-                    <span className="text-grey-700">Frais de publication</span>
-                    <span className="font-semibold">{formatPrice(LISTING_FEE)}</span>
-                  </div>
-                )}
-                {boostOption && (
-                  <div className="flex justify-between items-center text-lg">
-                    <span className="text-grey-700">Boost {boostOption}</span>
-                    <span className="font-semibold">{formatPrice(boostPrice)}</span>
-                  </div>
-                )}
-                <div className="border-t border-grey-200 pt-4 mt-4 flex justify-between items-center text-xl">
-                  <span className="font-bold text-grey-900">Total</span>
-                  <span className="font-extrabold text-primary">{formatPrice(totalPrice)}</span>
-                </div>
-              </div>
-              <div className="mt-6 text-base text-grey-700 flex items-start gap-2 bg-white/60 rounded-lg p-4 border border-primary-100">
-                <CreditCard className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Paiement sécurisé via PayDunya (Orange Money, MTN Mobile Money).</span>
-              </div>
-            </div>
-            
-            {/* Terms */}
-            <div className="bg-gradient-to-r from-primary-100 to-primary-50 rounded-xl p-6 border border-primary-200 shadow-sm mt-6">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-6 w-6 text-success mt-0.5 flex-shrink-0" />
-                <p className="text-base text-grey-800">
-                  En publiant cette annonce, vous acceptez les
-                  <a
-                    href="/terms"
-                    className="text-primary font-semibold underline hover:text-primary-700 transition ml-1"
-                    target="_blank"
-                    rel="noopener noreferrer"
                   >
-                    conditions d'utilisation
-                  </a>
-                  de DaloaMarket et confirmez que votre article est conforme à nos règles.
-                </p>
+                    <option value="">Sélectionnez une catégorie</option>
+                    {CATEGORIES.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.category && (
+                    <p className="input-error flex items-center mt-2 text-sm lg:text-base">
+                      <AlertCircle className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                      {errors.category.message}
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <label htmlFor="condition" className="input-label text-base lg:text-lg font-semibold mb-2 block">
+                    État
+                  </label>
+                  <select
+                    id="condition"
+                    className={`input-field text-base lg:text-lg px-4 lg:px-5 py-3 rounded-lg lg:rounded-xl shadow-sm ${
+                      errors.condition ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''
+                    }`}
+                    {...register('condition', { 
+                      required: 'L\'état est requis'
+                    })}
+                    disabled={isLoading}
+                  >
+                    <option value="">Sélectionnez l'état</option>
+                    {CONDITIONS.map((condition) => (
+                      <option key={condition.id} value={condition.id}>
+                        {condition.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.condition && (
+                    <p className="input-error flex items-center mt-2 text-sm lg:text-base">
+                      <AlertCircle className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                      {errors.condition.message}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="btn-primary w-full flex justify-center items-center"
-              disabled={isLoading || isUploading || isFirstListing === null}
-            >
-              {isLoading ? (
-                <LoadingSpinner size="small\" className="text-white" />
-              ) : (
-                prefillListing && prefillListing.id ? 'Payer et publier' : 'Publier et payer'
-              )}
-            </button>
-          </form>
+              
+              {/* District */}
+              <div>
+                <label htmlFor="district" className="input-label text-base lg:text-lg font-semibold mb-2 block">
+                  Quartier à Daloa
+                </label>
+                <select
+                  id="district"
+                  className={`input-field text-base lg:text-lg px-4 lg:px-5 py-3 rounded-lg lg:rounded-xl shadow-sm ${
+                    errors.district ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''
+                  }`}
+                  {...register('district', { 
+                    required: 'Le quartier est requis'
+                  })}
+                  disabled={isLoading}
+                >
+                  <option value="">Sélectionnez votre quartier</option>
+                  {DISTRICTS.map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+                {errors.district && (
+                  <p className="input-error flex items-center mt-2 text-sm lg:text-base">
+                    <AlertCircle className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                    {errors.district.message}
+                  </p>
+                )}
+              </div>
+              
+              {/* Pricing Info */}
+              <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl lg:rounded-2xl p-4 lg:p-8 border border-primary-200 shadow-sm">
+                <h3 className="text-lg lg:text-xl font-bold mb-4 lg:mb-6 text-primary">Coût de publication</h3>
+                
+                {isFirstListing ? (
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-green-800 text-base lg:text-lg">Première annonce gratuite !</p>
+                        <p className="text-green-700 text-sm lg:text-base">Votre première annonce sera publiée gratuitement.</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : userCredits && userCredits > 0 ? (
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-blue-800 text-base lg:text-lg">1 crédit sera consommé</p>
+                        <p className="text-blue-700 text-sm lg:text-base">Vous avez {userCredits} crédit{userCredits > 1 ? 's' : ''} disponible{userCredits > 1 ? 's' : ''}.</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                    <div className="flex items-center gap-3">
+                      <AlertCircle className="h-6 w-6 text-orange-600 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-orange-800 text-base lg:text-lg">Paiement requis</p>
+                        <p className="text-orange-700 text-sm lg:text-base">
+                          Vous devrez payer 200 FCFA ou acheter des crédits pour publier cette annonce.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Terms */}
+              <div className="bg-gradient-to-r from-primary-100 to-primary-50 rounded-lg lg:rounded-xl p-4 lg:p-6 border border-primary-200 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 lg:h-6 lg:w-6 text-success mt-0.5 flex-shrink-0" />
+                  <p className="text-sm lg:text-base text-grey-800">
+                    En publiant cette annonce, vous acceptez les
+                    <a
+                      href="/terms"
+                      className="text-primary font-semibold underline hover:text-primary-700 transition ml-1"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      conditions d'utilisation
+                    </a>
+                    de DaloaMarket et confirmez que votre article est conforme à nos règles.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="btn-primary w-full flex justify-center items-center text-base lg:text-lg py-3 lg:py-4"
+                disabled={isLoading || isUploading || isFirstListing === null}
+              >
+                {isLoading ? (
+                  <LoadingSpinner size="small" className="text-white" />
+                ) : isFirstListing ? (
+                  'Publier gratuitement'
+                ) : userCredits && userCredits > 0 ? (
+                  'Publier (1 crédit)'
+                ) : (
+                  'Créer l\'annonce'
+                )}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
