@@ -58,8 +58,8 @@ const HelpPage: React.FC = () => {
                   <Mail className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Email</p>
-                    <a href="mailto:oulobotresorelmas@gmail.com" className="text-grey-600 hover:text-primary">
-                      contact@daloamarket.com
+                    <a href="mailto:daloamarket@gmail.com" className="text-grey-600 hover:text-primary">
+                      daloamarket@gmail.com
                     </a>
                   </div>
                 </div>
@@ -67,10 +67,15 @@ const HelpPage: React.FC = () => {
                 <div className="flex items-start">
                   <Phone className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Téléphone</p>
-                    <a href="tel:+2250788000831" className="text-grey-600 hover:text-primary">
-                      +225 07 88 00 08 31
-                    </a>
+                    <p className="font-medium">Téléphones</p>
+                    <div className="space-y-1">
+                      <a href="tel:+2250788000831" className="text-grey-600 hover:text-primary block">
+                        +225 07 88 00 08 31 (Orange/Wave)
+                      </a>
+                      <a href="tel:+2250555863953" className="text-grey-600 hover:text-primary block">
+                        +225 05 55 86 39 53 (MTN)
+                      </a>
+                    </div>
                   </div>
                 </div>
                 
@@ -119,7 +124,7 @@ const HelpPage: React.FC = () => {
               <div className="mb-6 p-4 bg-orange-50 border-l-4 border-orange-500 text-orange-800 rounded">
                 ⚠️ Daloa Market est actuellement en <strong>phase de test (version bêta)</strong>.<br />
                 Cette plateforme évolue rapidement grâce à vos retours. Certaines fonctionnalités ou conditions peuvent changer sans préavis.<br />
-                <strong>Aucune structure juridique formelle n’est encore créée.</strong> L’activité reste à petite échelle et s’adapte selon les retours des utilisateurs.
+                <strong>Aucune structure juridique formelle n'est encore créée.</strong> L'activité reste à petite échelle et s'adapte selon les retours des utilisateurs.
               </div>
               
               {isSubmitted ? (
@@ -265,11 +270,3 @@ const HelpPage: React.FC = () => {
 };
 
 export default HelpPage;
-
-// Modernisation UI/UX :
-// - Cards : arrondis, ombre, padding, hover
-// - Formulaires : champs arrondis, labels, focus, erreurs
-// - Boutons : classes utilitaires, transitions, feedback
-// - Feedback visuel : loaders, messages
-// - Responsive : grilles, paddings
-// - Accessibilité : focus visible, aria-labels

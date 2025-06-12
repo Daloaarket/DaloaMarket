@@ -88,14 +88,19 @@ const Footer: React.FC = () => {
               </li>
               <li className="flex items-center group">
                 <Phone className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
-                <a href="tel:+2250788000831" className="text-grey-300 hover:text-primary transition-colors">
-                  +225 07 88 00 08 31
-                </a>
+                <div className="flex flex-col">
+                  <a href="tel:+2250788000831" className="text-grey-300 hover:text-primary transition-colors">
+                    +225 07 88 00 08 31 (Orange/Wave)
+                  </a>
+                  <a href="tel:+2250555863953" className="text-grey-300 hover:text-primary transition-colors text-sm">
+                    +225 05 55 86 39 53 (MTN)
+                  </a>
+                </div>
               </li>
               <li className="flex items-center group">
                 <Mail className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
-                <a href="mailto:oulobotresorelmas@gmail.com" className="text-grey-300 hover:text-primary transition-colors">
-                  contact@daloamarket.com
+                <a href="mailto:daloamarket@gmail.com" className="text-grey-300 hover:text-primary transition-colors">
+                  daloamarket@gmail.com
                 </a>
               </li>
             </ul>
