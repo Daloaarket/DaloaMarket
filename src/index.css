@@ -30,6 +30,13 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-grey-400;
   }
+
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    body {
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+  }
 }
 
 @layer components {
@@ -76,6 +83,37 @@
   
   .card {
     @apply bg-white rounded-2xl shadow-lg p-6 border border-grey-100;
+  }
+
+  /* Mobile-first responsive cards */
+  .mobile-card {
+    @apply bg-white rounded-xl shadow-md p-4 border border-grey-100 
+           lg:rounded-2xl lg:shadow-lg lg:p-6;
+  }
+
+  /* Mobile navigation */
+  .mobile-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-grey-200 
+           px-4 py-2 z-50 lg:hidden;
+  }
+
+  /* Mobile header */
+  .mobile-header {
+    @apply sticky top-0 bg-white shadow-sm z-40 px-4 py-3 
+           flex items-center justify-between lg:hidden;
+  }
+
+  /* Responsive text */
+  .text-responsive {
+    @apply text-base lg:text-lg;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg lg:text-xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-xl lg:text-2xl;
   }
 
   /* Line clamp utilities */
@@ -146,21 +184,36 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
   }
 
-  /* Custom button sizes */
-  .btn-xs {
-    @apply py-1 px-3 text-xs rounded-lg;
+  /* Mobile-optimized buttons */
+  .btn-mobile {
+    @apply py-4 px-6 text-base font-semibold rounded-xl 
+           min-h-[48px] flex items-center justify-center
+           lg:py-3 lg:text-sm lg:min-h-[40px];
   }
 
-  .btn-sm {
-    @apply py-2 px-4 text-sm rounded-xl;
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
   }
 
-  .btn-lg {
-    @apply py-4 px-8 text-lg rounded-2xl;
+  /* Responsive grid */
+  .responsive-grid {
+    @apply grid grid-cols-1 gap-4 
+           sm:grid-cols-2 sm:gap-6
+           lg:grid-cols-3 lg:gap-8;
   }
 
-  .btn-xl {
-    @apply py-5 px-10 text-xl rounded-3xl;
+  /* Mobile-first spacing */
+  .section-padding {
+    @apply py-8 px-4 
+           lg:py-16 lg:px-8;
+  }
+
+  /* Responsive container */
+  .responsive-container {
+    @apply max-w-sm mx-auto px-4
+           sm:max-w-md sm:px-6
+           lg:max-w-4xl lg:px-8;
   }
 }
 
@@ -181,21 +234,31 @@
     box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 
-  /* Responsive text */
-  .text-responsive {
-    font-size: clamp(1rem, 2.5vw, 1.25rem);
+  /* Mobile-specific utilities */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .text-responsive-lg {
-    font-size: clamp(1.25rem, 4vw, 2rem);
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
   }
 
-  .text-responsive-xl {
-    font-size: clamp(1.5rem, 5vw, 3rem);
+  /* Prevent text selection on interactive elements */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Smooth scrolling for mobile */
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
 }
 
-/* Mobile optimizations */
+/* Mobile-specific optimizations */
 @media (max-width: 640px) {
   .container-custom {
     @apply px-4;
@@ -204,11 +267,63 @@
   .btn-primary,
   .btn-secondary,
   .btn-outline {
-    @apply py-3 px-4 text-base;
+    @apply py-3 px-4 text-base min-h-[48px];
   }
 
   .input-field {
-    @apply py-3 text-base;
+    @apply py-3 text-base min-h-[48px];
+  }
+
+  /* Prevent zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Mobile-friendly cards */
+  .card {
+    @apply rounded-xl p-4 shadow-md;
+  }
+
+  /* Mobile navigation improvements */
+  .mobile-nav-item {
+    @apply flex flex-col items-center justify-center py-2 px-1 
+           min-h-[60px] text-xs font-medium;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container-custom {
+    @apply px-6;
+  }
+
+  .responsive-grid {
+    @apply grid-cols-2 gap-6;
+  }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1025px) {
+  .container-custom {
+    @apply px-8;
+  }
+
+  .responsive-grid {
+    @apply grid-cols-3 gap-8;
+  }
+
+  /* Hover effects only on desktop */
+  .hover-lift:hover {
+    @apply transform -translate-y-1 shadow-lg;
+  }
+
+  .hover-scale:hover {
+    @apply transform scale-105;
   }
 }
 
@@ -245,5 +360,23 @@
   .btn-primary,
   .btn-secondary {
     @apply border-2 border-current;
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-header {
+    @apply py-2;
+  }
+  
+  .section-padding {
+    @apply py-4;
+  }
+}
+
+/* Large screen optimizations */
+@media (min-width: 1536px) {
+  .container-custom {
+    @apply max-w-6xl;
   }
 }
