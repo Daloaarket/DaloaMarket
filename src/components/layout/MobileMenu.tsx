@@ -39,7 +39,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ onClose }) => {
       {/* Overlay sombre pour fermer le menu */}
       <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       
-      {/* Menu content - Hauteur normale avec scroll interne */}
+      {/* Menu content - Pleine hauteur avec fond opaque */}
       <div className="absolute top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary to-primary-600 px-4 py-4 flex items-center justify-between flex-shrink-0">
@@ -57,9 +57,9 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ onClose }) => {
           </button>
         </div>
 
-        {/* Contenu principal - Avec scroll interne */}
-        <div className="flex-1 bg-white px-4 py-4 overflow-y-auto">
-          <div className="space-y-6">
+        {/* Contenu principal - Ajusté pour tenir dans l'écran */}
+        <div className="flex-1 bg-white px-4 py-4 flex flex-col justify-between overflow-hidden">
+          <div className="space-y-4">
             {/* User Section */}
             {user ? (
               <div className="bg-gradient-to-br from-grey-50 to-grey-100 rounded-xl p-4 border border-grey-200">
@@ -99,8 +99,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ onClose }) => {
             )}
 
             {/* Main Navigation */}
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-grey-500 uppercase tracking-wider mb-3">Navigation</h3>
+            <nav className="space-y-1">
+              <h3 className="text-sm font-semibold text-grey-500 uppercase tracking-wider mb-2">Navigation</h3>
               
               <button 
                 onClick={() => handleNavigation('/')}
@@ -144,12 +144,15 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ onClose }) => {
                   <span className="ml-4 text-grey-900 font-medium group-hover:text-primary transition-colors">Acheter des crédits</span>
                 </button>
               )}
-            </div>
+            </nav>
+          </div>
 
+          {/* Bottom Section */}
+          <div className="space-y-4">
             {/* Account Section */}
             {user && (
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-grey-500 uppercase tracking-wider mb-3">Compte</h3>
+                <h3 className="text-sm font-semibold text-grey-500 uppercase tracking-wider mb-2">Compte</h3>
                 
                 <button 
                   onClick={() => handleNavigation('/settings')}
@@ -179,9 +182,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ onClose }) => {
                 <span className="ml-4 text-grey-900 font-medium group-hover:text-primary transition-colors">Aide & Support</span>
               </button>
             </div>
-
-            {/* Padding bottom pour éviter que le contenu soit coupé */}
-            <div className="h-8"></div>
           </div>
         </div>
       </div>
