@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, AlertCircle, TrendingUp, Users, Shield, Smartphone } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Database } from '../lib/database.types';
-import SearchBar from '../components/search/SearchBar';
 import ListingCard from '../components/listings/ListingCard';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { CATEGORIES } from '../lib/utils';
@@ -154,13 +153,6 @@ const HomePage: React.FC = () => {
         <div className="absolute top-5 left-5 w-8 h-8 sm:w-12 sm:h-12 lg:w-16 lg:h-16 bg-white opacity-10 rounded-full"></div>
         <div className="absolute bottom-5 right-5 w-12 h-12 sm:w-16 sm:h-16 lg:w-24 lg:h-24 bg-white opacity-5 rounded-full"></div>
         <div className="absolute top-1/2 left-1/4 w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12 bg-white opacity-10 rounded-full"></div>
-      </section>
-
-      {/* Search Section */}
-      <section className="py-4 sm:py-6 lg:py-8 bg-white shadow-lg relative z-10 -mt-3 sm:-mt-4 lg:-mt-6 mx-3 sm:mx-4 rounded-xl lg:rounded-2xl">
-        <div className="container-custom">
-          <SearchBar className="max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto" />
-        </div>
       </section>
 
       {/* Stats Section */}
