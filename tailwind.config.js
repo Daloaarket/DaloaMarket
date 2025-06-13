@@ -108,6 +108,14 @@ export default {
       backdropBlur: {
         xs: '2px',
       },
+      spacing: {
+        'safe-area-bottom': 'env(safe-area-inset-bottom)',
+        'safe-area-top': 'max(env(safe-area-inset-top), 44px)',
+      },
+      height: {
+        'safe-area-bottom': 'env(safe-area-inset-bottom)',
+        'safe-area-top': 'max(env(safe-area-inset-top), 44px)',
+      },
     },
   },
   plugins: [],

@@ -6,12 +6,16 @@
   html {
     -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
+    /* Zone sûre en haut pour éviter que la barre d'URL masque le contenu */
+    padding-top: env(safe-area-inset-top);
   }
   
   body {
     @apply bg-grey-50 text-grey-900 font-sans antialiased;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Padding supplémentaire pour la barre d'URL mobile */
+    padding-top: max(env(safe-area-inset-top), 20px);
   }
 
   /* Custom scrollbar */
@@ -35,6 +39,20 @@
   @media (max-width: 768px) {
     body {
       font-size: 14px; /* Prevent zoom on iOS */
+      /* Padding plus important sur mobile pour la barre d'URL */
+      padding-top: max(env(safe-area-inset-top), 44px);
+    }
+    
+    /* Zone sûre spécifique pour les conteneurs principaux */
+    .safe-top {
+      padding-top: max(env(safe-area-inset-top), 44px);
+    }
+  }
+
+  /* Zone sûre pour iPhone avec encoche */
+  @supports (padding: max(0px)) {
+    body {
+      padding-top: max(env(safe-area-inset-top), 44px);
     }
   }
 }
@@ -42,6 +60,8 @@
 @layer components {
   .container-custom {
     @apply px-3 sm:px-4 lg:px-8 mx-auto w-full max-w-7xl;
+    /* Ajout d'un padding-top pour éviter le masquage par la barre d'URL */
+    padding-top: max(env(safe-area-inset-top), 20px);
   }
   
   .btn-primary {
@@ -100,10 +120,11 @@
            px-2 py-1 z-50 lg:hidden;
   }
 
-  /* Mobile header */
+  /* Mobile header avec zone sûre */
   .mobile-header {
-    @apply sticky top-0 bg-white shadow-sm z-40 px-3 py-2 
+    @apply sticky bg-white shadow-sm z-40 px-3 py-2 
            flex items-center justify-between sm:px-4 sm:py-3 lg:hidden;
+    top: max(env(safe-area-inset-top), 44px);
   }
 
   /* Responsive text */
@@ -207,18 +228,21 @@
            lg:grid-cols-3 lg:gap-6;
   }
 
-  /* Mobile-first spacing */
+  /* Mobile-first spacing avec zone sûre */
   .section-padding {
     @apply py-6 px-3 
            sm:py-8 sm:px-4
            lg:py-16 lg:px-8;
+    /* Padding-top supplémentaire pour la première section */
+    padding-top: calc(1.5rem + max(env(safe-area-inset-top), 44px));
   }
 
-  /* Responsive container */
+  /* Responsive container avec zone sûre */
   .responsive-container {
     @apply max-w-full mx-auto px-3
            sm:max-w-md sm:px-4
            lg:max-w-4xl lg:px-8;
+    padding-top: max(env(safe-area-inset-top), 20px);
   }
 }
 
@@ -239,13 +263,13 @@
     box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 
-  /* Mobile-specific utilities */
+  /* Mobile-specific utilities avec zone sûre */
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
   .safe-area-top {
-    padding-top: env(safe-area-inset-top);
+    padding-top: max(env(safe-area-inset-top), 44px);
   }
 
   /* Prevent text selection on interactive elements */
@@ -263,10 +287,11 @@
   }
 }
 
-/* Mobile-specific optimizations */
+/* Mobile-specific optimizations avec zone sûre */
 @media (max-width: 640px) {
   .container-custom {
     @apply px-3;
+    padding-top: max(env(safe-area-inset-top), 44px);
   }
 
   .btn-primary,
@@ -300,12 +325,18 @@
     @apply flex flex-col items-center justify-center py-1.5 px-1 
            min-h-[50px] text-xs font-medium;
   }
+
+  /* Zone sûre pour le contenu principal */
+  .main-content {
+    padding-top: max(env(safe-area-inset-top), 44px);
+  }
 }
 
 /* Tablet optimizations */
 @media (min-width: 641px) and (max-width: 1024px) {
   .container-custom {
     @apply px-4;
+    padding-top: max(env(safe-area-inset-top), 20px);
   }
 
   .responsive-grid {
@@ -317,6 +348,7 @@
 @media (min-width: 1025px) {
   .container-custom {
     @apply px-8;
+    padding-top: 0; /* Pas de zone sûre nécessaire sur desktop */
   }
 
   .responsive-grid {
@@ -384,5 +416,12 @@
 @media (min-width: 1536px) {
   .container-custom {
     @apply max-w-6xl;
+  }
+}
+
+/* Zone sûre spécifique pour les appareils avec encoche */
+@supports (padding: max(0px)) {
+  .safe-area-inset-top {
+    padding-top: max(env(safe-area-inset-top), 44px);
   }
 }
