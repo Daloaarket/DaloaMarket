@@ -175,8 +175,16 @@ const AchatCreditsPage: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-grey-900 mb-1 lg:mb-2">Effectuez le paiement</h3>
                     <p className="text-grey-600 text-sm lg:text-base">
-                      Envoyez le montant via Orange Money ou MTN au <strong>+225 07 88 00 08 31</strong>
+                      Envoyez le montant via :
                     </p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-grey-700 font-medium text-sm lg:text-base">
+                        <strong>Orange Money/Wave :</strong> +225 07 88 00 08 31
+                      </p>
+                      <p className="text-grey-700 font-medium text-sm lg:text-base">
+                        <strong>MTN Mobile Money :</strong> +225 05 55 86 39 53
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -199,7 +207,10 @@ const AchatCreditsPage: React.FC = () => {
                 </h3>
                 <div className="space-y-2 text-sm lg:text-base">
                   <p className="text-primary-700">
-                    <strong>Orange Money / MTN :</strong> +225 07 88 00 08 31
+                    <strong>Orange Money/Wave :</strong> +225 07 88 00 08 31
+                  </p>
+                  <p className="text-primary-700">
+                    <strong>MTN Mobile Money :</strong> +225 05 55 86 39 53
                   </p>
                   <p className="text-primary-700">
                     <strong>Nom :</strong> Oulobo Elmas Tresor
