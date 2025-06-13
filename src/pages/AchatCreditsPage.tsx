@@ -86,6 +86,15 @@ const AchatCreditsPage: React.FC = () => {
     }
   };
 
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -97,13 +106,36 @@ const AchatCreditsPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Simuler l'envoi du formulaire
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Convertir le fichier en base64
+      const screenshotBase64 = await convertFileToBase64(formData.screenshot);
+      
+      // Envoyer la demande via la fonction Netlify
+      const response = await fetch('/.netlify/functions/send-credit-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          selectedPack: formData.selectedPack,
+          phoneNumber: formData.phoneNumber,
+          email: formData.email,
+          fullName: formData.fullName,
+          screenshotBase64: screenshotBase64,
+          screenshotFilename: formData.screenshot.name
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erreur lors de l\'envoi');
+      }
       
       toast.success('Demande envoyée avec succès !');
       setCurrentStep('success');
     } catch (error) {
-      toast.error('Erreur lors de l\'envoi');
+      console.error('Erreur:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'envoi');
     } finally {
       setIsSubmitting(false);
     }
@@ -148,11 +180,10 @@ const AchatCreditsPage: React.FC = () => {
                   <Info className="h-8 w-8 lg:h-10 lg:w-10 text-orange-600" />
                 </div>
                 <h2 className="text-xl lg:text-2xl font-bold text-grey-900 mb-3 lg:mb-4">
-                  Processus d'achat manuel
+                  Processus d'achat avec envoi automatique
                 </h2>
                 <p className="text-grey-600 text-base lg:text-lg leading-relaxed">
-                  En raison de l'absence de statut d'entreprise officielle, nous ne pouvons pas intégrer les API de paiement automatiques. 
-                  Vous devez effectuer le dépôt manuellement puis envoyer les preuves.
+                  Effectuez votre paiement puis envoyez-nous la preuve. Votre demande sera traitée automatiquement par email.
                 </p>
               </div>
 
@@ -193,8 +224,8 @@ const AchatCreditsPage: React.FC = () => {
                     <span className="text-white font-bold text-sm lg:text-base">3</span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-grey-900 mb-1 lg:mb-2">Envoyez les preuves</h3>
-                    <p className="text-grey-600 text-sm lg:text-base">Téléchargez la capture d'écran de votre transaction</p>
+                    <h3 className="font-semibold text-grey-900 mb-1 lg:mb-2">Envoyez les preuves automatiquement</h3>
+                    <p className="text-grey-600 text-sm lg:text-base">Téléchargez votre capture d'écran et remplissez le formulaire. Un email sera envoyé automatiquement à notre équipe.</p>
                   </div>
                 </div>
               </div>
@@ -457,8 +488,8 @@ const AchatCreditsPage: React.FC = () => {
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                     <div className="text-sm lg:text-base text-blue-800">
-                      <p className="font-medium mb-1">Traitement manuel</p>
-                      <p>Votre demande sera traitée dans les 24h. Vous recevrez une confirmation par email.</p>
+                      <p className="font-medium mb-1">Traitement automatique</p>
+                      <p>Votre demande sera envoyée automatiquement par email à notre équipe. Vous recevrez une confirmation dans les 24h.</p>
                     </div>
                   </div>
                 </div>
@@ -483,8 +514,8 @@ const AchatCreditsPage: React.FC = () => {
           </h2>
           
           <p className="text-grey-600 mb-6 lg:mb-8 text-base lg:text-lg leading-relaxed">
-            Votre demande d'achat de crédits a été envoyée avec succès. 
-            Nous la traiterons dans les 24h et vous recevrez une confirmation par email.
+            Votre demande d'achat de crédits a été envoyée automatiquement par email à notre équipe. 
+            Vous recevrez une confirmation dans les 24h.
           </p>
           
           <div className="space-y-3">

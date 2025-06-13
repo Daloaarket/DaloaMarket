@@ -25,6 +25,7 @@
   PAYDUNYA_PUBLIC_KEY = "live_public_VTsXSUVf0mW55Xhze8tfwlhXsLo"
   PAYDUNYA_TOKEN = "VS2Eff1F0yAjoAzbjXPb"
   PAYDUNYA_MODE = "live"
+  RESEND_API_KEY = "re_FfzaEMsP_771bSnZKnEcNXxyrAyoSEky3"
 
 [context.deploy-preview.environment]
   SUPABASE_URL = "https://your-project-ref.supabase.co"
@@ -34,3 +35,4 @@
   PAYDUNYA_PUBLIC_KEY = "test_public_dxZUCZEYfhtpgPcN2DPD0U8CKgC"
   PAYDUNYA_TOKEN = "9wn8AX45xISNFSIpnT2d"
   PAYDUNYA_MODE = "test"
+  RESEND_API_KEY = "re_FfzaEMsP_771bSnZKnEcNXxyrAyoSEky3"
