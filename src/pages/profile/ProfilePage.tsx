@@ -155,72 +155,72 @@ const ProfilePage: React.FC = () => {
   }
   
   return (
-    <div className="min-h-screen bg-grey-50 py-8">
+    <div className="min-h-screen bg-grey-50 py-4 sm:py-6 lg:py-8">
       <div className="container-custom max-w-6xl">
         {/* Affichage du solde de crédits si connecté */}
         {user && (
-          <div className="container-custom mt-6 mb-2 flex justify-end">
-            <div className="bg-white rounded-card shadow-card px-4 py-2 flex items-center gap-2 text-primary font-semibold">
-              <span>Crédits&nbsp;:</span>
-              <span className="text-lg">{userCredits !== null ? userCredits : <LoadingSpinner size="small" />}</span>
-              <Link to="/acheter-credits" className="ml-3 btn-secondary btn-xs">Acheter des crédits</Link>
+          <div className="container-custom mt-3 sm:mt-4 lg:mt-6 mb-2 flex justify-end">
+            <div className="bg-white rounded-lg lg:rounded-xl shadow-md px-3 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2 text-primary font-semibold">
+              <span className="text-sm sm:text-base">Crédits:</span>
+              <span className="text-base sm:text-lg">{userCredits !== null ? userCredits : <LoadingSpinner size="small" />}</span>
+              <Link to="/acheter-credits" className="ml-2 btn-secondary py-1 px-2 text-xs sm:text-sm">Acheter</Link>
             </div>
           </div>
         )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Profile Card */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-card shadow-card p-6">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="h-24 w-24 rounded-full bg-primary-100 flex items-center justify-center mb-4">
-                  <User className="h-12 w-12 text-primary" />
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-md lg:shadow-lg p-4 sm:p-6">
+              <div className="flex flex-col items-center text-center mb-4 sm:mb-6">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 rounded-full bg-primary-100 flex items-center justify-center mb-3 sm:mb-4">
+                  <User className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-primary" />
                 </div>
                 
-                <h1 className="text-2xl font-bold">{userProfile.full_name}</h1>
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">{userProfile.full_name}</h1>
                 
-                <p className="text-grey-600 mt-1">{user?.email}</p>
+                <p className="text-grey-600 mt-1 text-sm sm:text-base">{user?.email}</p>
                 
-                <Link to="/settings" className="btn-secondary mt-3 mb-2 w-full max-w-xs">
+                <Link to="/settings" className="btn-secondary mt-2 sm:mt-3 mb-2 w-full max-w-xs text-sm sm:text-base">
                   Modifier mon profil
                 </Link>
                 
                 {userProfile.rating && (
                   <div className="flex items-center mt-2">
-                    <Star className="h-5 w-5 text-primary fill-current" />
-                    <span className="ml-1 font-medium">{userProfile.rating.toFixed(1)}</span>
-                    <span className="text-grey-500 ml-1">({userReviews.length} avis)</span>
+                    <Star className="h-4 w-4 sm:h-5 sm:w-5 text-primary fill-current" />
+                    <span className="ml-1 font-medium text-sm sm:text-base">{userProfile.rating.toFixed(1)}</span>
+                    <span className="text-grey-500 ml-1 text-sm">({userReviews.length} avis)</span>
                   </div>
                 )}
                 
-                <p className="text-sm text-grey-500 mt-2">
+                <p className="text-xs sm:text-sm text-grey-500 mt-2">
                   Membre depuis {formatDate(userProfile.created_at)}
                 </p>
               </div>
               
-              <div className="space-y-4 mb-6">
+              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                 <div className="flex items-center">
-                  <Phone className="h-5 w-5 text-grey-500 mr-3" />
-                  <span>{formatPhoneNumber(userProfile.phone)}</span>
+                  <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-grey-500 mr-3" />
+                  <span className="text-sm sm:text-base">{formatPhoneNumber(userProfile.phone)}</span>
                 </div>
                 
                 <div className="flex items-center">
-                  <MapPin className="h-5 w-5 text-grey-500 mr-3" />
-                  <span>{userProfile.district}</span>
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-grey-500 mr-3" />
+                  <span className="text-sm sm:text-base">{userProfile.district}</span>
                 </div>
               </div>
               
-              <div className="flex flex-col space-y-3">
-                <Link to="/settings" className="btn-outline flex items-center justify-center">
-                  <Settings className="h-5 w-5 mr-2" />
+              <div className="flex flex-col space-y-2 sm:space-y-3">
+                <Link to="/settings" className="btn-outline flex items-center justify-center text-sm sm:text-base">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Paramètres
                 </Link>
                 
                 <button
                   onClick={handleSignOut}
-                  className="btn-outline text-error-600 border-error-600 hover:bg-error-50 flex items-center justify-center"
+                  className="btn-outline text-error-600 border-error-600 hover:bg-error-50 flex items-center justify-center text-sm sm:text-base"
                 >
-                  <LogOut className="h-5 w-5 mr-2" />
+                  <LogOut className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Déconnexion
                 </button>
               </div>
@@ -230,11 +230,11 @@ const ProfilePage: React.FC = () => {
           {/* Tabs and Content */}
           <div className="lg:col-span-2">
             {/* Tabs */}
-            <div className="bg-white rounded-card shadow-card mb-6 overflow-hidden">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-md lg:shadow-lg mb-4 sm:mb-6 overflow-hidden">
               <div className="flex border-b border-grey-200">
                 <button
                   onClick={() => setActiveTab('listings')}
-                  className={`flex-1 py-4 px-6 text-center font-medium ${
+                  className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 text-center font-medium text-sm sm:text-base ${
                     activeTab === 'listings' 
                       ? 'text-primary border-b-2 border-primary' 
                       : 'text-grey-600 hover:text-grey-900'
@@ -245,7 +245,7 @@ const ProfilePage: React.FC = () => {
                 
                 <button
                   onClick={() => setActiveTab('reviews')}
-                  className={`flex-1 py-4 px-6 text-center font-medium ${
+                  className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 text-center font-medium text-sm sm:text-base ${
                     activeTab === 'reviews' 
                       ? 'text-primary border-b-2 border-primary' 
                       : 'text-grey-600 hover:text-grey-900'
@@ -259,34 +259,36 @@ const ProfilePage: React.FC = () => {
             {/* Tab Content */}
             {activeTab === 'listings' && (
               userListings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
                   {userListings.map((listing) => (
-                    <div key={listing.id} className="relative group transition-shadow hover:shadow-lg rounded-2xl bg-white border border-grey-100">
-                      <ListingCard listing={listing} />
-                      {/* Suppression des actions d'annonce : elles seront désormais sur la page de détail */}
-                      {/* Les badges de statut (en attente, vendu) sont conservés pour information */}
-                      <div className="flex gap-2 mt-2 items-center px-3 pb-3">
+                    <div key={listing.id} className="relative group">
+                      <div className="scale-90 sm:scale-95 lg:scale-100 origin-center">
+                        <ListingCard listing={listing} />
+                      </div>
+                      {/* Status badges compacts */}
+                      <div className="absolute top-1 right-1 flex flex-col gap-1">
                         {listing.status === 'pending' && (
-                          <span className="text-xs bg-warning-100 text-warning-700 px-2 py-1 rounded font-medium mr-2">En attente de paiement</span>
-                        )}
-                        {listing.status === 'active' && (
-                          <></>
+                          <span className="text-xs bg-warning-100 text-warning-700 px-1.5 py-0.5 rounded font-medium">
+                            En attente
+                          </span>
                         )}
                         {listing.status === 'sold' && (
-                          <span className="text-xs bg-success-100 text-success-700 px-2 py-1 rounded font-medium mr-2">Vendu</span>
+                          <span className="text-xs bg-success-100 text-success-700 px-1.5 py-0.5 rounded font-medium">
+                            Vendu
+                          </span>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="bg-white rounded-card shadow-card p-8 text-center">
-                  <ShoppingBag className="h-16 w-16 text-grey-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Aucune annonce</h3>
-                  <p className="text-grey-600 mb-6">
+                <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-md lg:shadow-lg p-6 sm:p-8 text-center">
+                  <ShoppingBag className="h-12 w-12 sm:h-16 sm:w-16 text-grey-400 mx-auto mb-3 sm:mb-4" />
+                  <h3 className="text-lg sm:text-xl font-semibold mb-2">Aucune annonce</h3>
+                  <p className="text-grey-600 mb-4 sm:mb-6 text-sm sm:text-base">
                     Vous n'avez pas encore publié d'annonces.
                   </p>
-                  <Link to="/create-listing" className="btn-primary">
+                  <Link to="/create-listing" className="btn-primary text-sm sm:text-base">
                     Publier une annonce
                   </Link>
                 </div>
@@ -294,35 +296,36 @@ const ProfilePage: React.FC = () => {
             )}
             
             {activeTab === 'reviews' && (
-              <div className="bg-white rounded-card shadow-card p-6">
+              <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-md lg:shadow-lg p-4 sm:p-6">
                 {userReviews.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {userReviews.map((review) => (
-                      <div key={review.id} className="p-4 border-b border-grey-200 last:border-b-0">
+                      <div key={review.id} className="p-3 sm:p-4 border-b border-grey-200 last:border-b-0">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center">
-                            <User className="h-8 w-8 text-primary mr-3" />
+                            <User className="h-6 w-6 sm:h-8 sm:w-8 text-primary mr-2 sm:mr-3" />
                             <div>
-                              {/* Correction : on n'affiche que le nom, pas de lien vers un id inexistant */}
-                              <span className="font-semibold text-grey-800">{review.reviewer.full_name}</span>
-                              <p className="text-sm text-grey-500">
+                              <span className="font-semibold text-grey-800 text-sm sm:text-base">{review.reviewer.full_name}</span>
+                              <p className="text-xs sm:text-sm text-grey-500">
                                 {formatDate(review.created_at)}
                               </p>
                             </div>
                           </div>
-                          {/* Correction : on n'affiche que le titre, pas de lien vers un id inexistant */}
                           {review.listing && (
-                            <span className="text-primary text-sm font-medium">{review.listing.title}</span>
+                            <span className="text-primary text-xs sm:text-sm font-medium">{review.listing.title}</span>
                           )}
                         </div>
-                        <div className="text-grey-700 text-base">
+                        <div className="text-grey-700 text-sm sm:text-base">
                           {review.comment || 'Aucun commentaire.'}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center text-grey-500">Aucun avis reçu pour le moment.</div>
+                  <div className="text-center text-grey-500 py-8">
+                    <Star className="h-12 w-12 sm:h-16 sm:w-16 text-grey-400 mx-auto mb-3 sm:mb-4" />
+                    <p className="text-sm sm:text-base">Aucun avis reçu pour le moment.</p>
+                  </div>
                 )}
               </div>
             )}
@@ -332,19 +335,19 @@ const ProfilePage: React.FC = () => {
         {/* Confirmation de suppression */}
         {confirmDeleteId && (
           <div className="fixed inset-0 bg-grey-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-card shadow-card p-6 max-w-md w-full text-center">
-              <h2 className="text-xl font-bold mb-4">Supprimer l'annonce ?</h2>
-              <p className="text-grey-700 mb-6">Cette action est irréversible. Voulez-vous vraiment supprimer cette annonce ?</p>
-              <div className="flex justify-center gap-4">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-xl p-4 sm:p-6 max-w-md w-full text-center">
+              <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Supprimer l'annonce ?</h2>
+              <p className="text-grey-700 mb-4 sm:mb-6 text-sm sm:text-base">Cette action est irréversible. Voulez-vous vraiment supprimer cette annonce ?</p>
+              <div className="flex justify-center gap-3 sm:gap-4">
                 <button
-                  className="btn-outline"
+                  className="btn-outline text-sm sm:text-base"
                   onClick={() => setConfirmDeleteId(null)}
                   disabled={!!deletingId}
                 >
                   Annuler
                 </button>
                 <button
-                  className="btn-primary bg-error-600 hover:bg-error-700 border-error-600"
+                  className="btn-primary bg-error-600 hover:bg-error-700 border-error-600 text-sm sm:text-base"
                   onClick={() => handleDeleteListing(confirmDeleteId)}
                   disabled={!!deletingId}
                 >
