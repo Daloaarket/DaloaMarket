@@ -16,7 +16,7 @@
 
   /* Custom scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
 
   ::-webkit-scrollbar-track {
@@ -34,47 +34,49 @@
   /* Mobile optimizations */
   @media (max-width: 768px) {
     body {
-      font-size: 16px; /* Prevent zoom on iOS */
+      font-size: 14px; /* Prevent zoom on iOS */
     }
   }
 }
 
 @layer components {
   .container-custom {
-    @apply px-4 sm:px-6 lg:px-8 mx-auto w-full max-w-7xl;
+    @apply px-3 sm:px-4 lg:px-8 mx-auto w-full max-w-7xl;
   }
   
   .btn-primary {
-    @apply bg-primary text-white font-semibold py-3 px-6 rounded-2xl 
-           shadow-lg hover:bg-primary-600 hover:shadow-xl focus:outline-none focus:ring-2 
+    @apply bg-primary text-white font-semibold py-2.5 px-4 rounded-xl 
+           shadow-md hover:bg-primary-600 hover:shadow-lg focus:outline-none focus:ring-2 
            focus:ring-primary-500 focus:ring-opacity-50 transition-all duration-200
-           disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5;
+           disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5
+           text-sm sm:text-base sm:py-3 sm:px-6 sm:rounded-2xl;
   }
   
   .btn-secondary {
-    @apply bg-secondary text-white font-semibold py-3 px-6 rounded-2xl 
-           shadow-lg hover:bg-secondary-600 hover:shadow-xl focus:outline-none focus:ring-2 
+    @apply bg-secondary text-white font-semibold py-2.5 px-4 rounded-xl 
+           shadow-md hover:bg-secondary-600 hover:shadow-lg focus:outline-none focus:ring-2 
            focus:ring-secondary-500 focus:ring-opacity-50 transition-all duration-200
-           disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5;
+           disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5
+           text-sm sm:text-base sm:py-3 sm:px-6 sm:rounded-2xl;
   }
   
   .btn-outline {
-    @apply border-2 border-grey-300 text-grey-700 font-semibold py-3 px-6 
-           rounded-2xl shadow-sm hover:bg-grey-50 hover:border-grey-400 hover:shadow-md 
+    @apply border border-grey-300 text-grey-700 font-semibold py-2.5 px-4 
+           rounded-xl shadow-sm hover:bg-grey-50 hover:border-grey-400 hover:shadow-md 
            focus:outline-none focus:ring-2 focus:ring-grey-500 focus:ring-opacity-50 
            transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
-           transform hover:-translate-y-0.5;
+           transform hover:-translate-y-0.5 text-sm sm:text-base sm:py-3 sm:px-6 sm:rounded-2xl;
   }
   
   .input-field {
-    @apply w-full px-4 py-3 rounded-xl border border-grey-300 
+    @apply w-full px-3 py-2.5 rounded-lg border border-grey-300 
            focus:outline-none focus:ring-2 focus:ring-primary-500 
            focus:border-primary-500 transition-all duration-200 bg-white
-           placeholder-grey-400;
+           placeholder-grey-400 text-sm sm:text-base sm:px-4 sm:py-3 sm:rounded-xl;
   }
   
   .input-label {
-    @apply block text-sm font-semibold text-grey-700 mb-2;
+    @apply block text-sm font-semibold text-grey-700 mb-1.5 sm:mb-2;
   }
   
   .input-error {
@@ -82,38 +84,39 @@
   }
   
   .card {
-    @apply bg-white rounded-2xl shadow-lg p-6 border border-grey-100;
+    @apply bg-white rounded-xl shadow-md p-4 border border-grey-100 sm:rounded-2xl sm:shadow-lg sm:p-6;
   }
 
   /* Mobile-first responsive cards */
   .mobile-card {
-    @apply bg-white rounded-xl shadow-md p-4 border border-grey-100 
+    @apply bg-white rounded-lg shadow-sm p-3 border border-grey-100 
+           sm:rounded-xl sm:shadow-md sm:p-4
            lg:rounded-2xl lg:shadow-lg lg:p-6;
   }
 
   /* Mobile navigation */
   .mobile-nav {
     @apply fixed bottom-0 left-0 right-0 bg-white border-t border-grey-200 
-           px-4 py-2 z-50 lg:hidden;
+           px-2 py-1 z-50 lg:hidden;
   }
 
   /* Mobile header */
   .mobile-header {
-    @apply sticky top-0 bg-white shadow-sm z-40 px-4 py-3 
-           flex items-center justify-between lg:hidden;
+    @apply sticky top-0 bg-white shadow-sm z-40 px-3 py-2 
+           flex items-center justify-between sm:px-4 sm:py-3 lg:hidden;
   }
 
   /* Responsive text */
   .text-responsive {
-    @apply text-base lg:text-lg;
+    @apply text-sm sm:text-base lg:text-lg;
   }
 
   .text-responsive-lg {
-    @apply text-lg lg:text-xl;
+    @apply text-base sm:text-lg lg:text-xl;
   }
 
   .text-responsive-xl {
-    @apply text-xl lg:text-2xl;
+    @apply text-lg sm:text-xl lg:text-2xl;
   }
 
   /* Line clamp utilities */
@@ -186,9 +189,10 @@
 
   /* Mobile-optimized buttons */
   .btn-mobile {
-    @apply py-4 px-6 text-base font-semibold rounded-xl 
-           min-h-[48px] flex items-center justify-center
-           lg:py-3 lg:text-sm lg:min-h-[40px];
+    @apply py-3 px-4 text-sm font-semibold rounded-lg 
+           min-h-[44px] flex items-center justify-center
+           sm:py-3 sm:text-base sm:min-h-[48px]
+           lg:py-3 lg:text-base lg:min-h-[40px];
   }
 
   /* Touch-friendly interactive elements */
@@ -198,21 +202,22 @@
 
   /* Responsive grid */
   .responsive-grid {
-    @apply grid grid-cols-1 gap-4 
-           sm:grid-cols-2 sm:gap-6
-           lg:grid-cols-3 lg:gap-8;
+    @apply grid grid-cols-1 gap-3 
+           sm:grid-cols-2 sm:gap-4
+           lg:grid-cols-3 lg:gap-6;
   }
 
   /* Mobile-first spacing */
   .section-padding {
-    @apply py-8 px-4 
+    @apply py-6 px-3 
+           sm:py-8 sm:px-4
            lg:py-16 lg:px-8;
   }
 
   /* Responsive container */
   .responsive-container {
-    @apply max-w-sm mx-auto px-4
-           sm:max-w-md sm:px-6
+    @apply max-w-full mx-auto px-3
+           sm:max-w-md sm:px-4
            lg:max-w-4xl lg:px-8;
   }
 }
@@ -261,17 +266,17 @@
 /* Mobile-specific optimizations */
 @media (max-width: 640px) {
   .container-custom {
-    @apply px-4;
+    @apply px-3;
   }
 
   .btn-primary,
   .btn-secondary,
   .btn-outline {
-    @apply py-3 px-4 text-base min-h-[48px];
+    @apply py-2.5 px-4 text-sm min-h-[44px];
   }
 
   .input-field {
-    @apply py-3 text-base min-h-[48px];
+    @apply py-2.5 text-sm min-h-[44px];
   }
 
   /* Prevent zoom on input focus */
@@ -279,6 +284,7 @@
   input[type="email"],
   input[type="tel"],
   input[type="password"],
+  input[type="number"],
   textarea,
   select {
     font-size: 16px !important;
@@ -286,24 +292,24 @@
 
   /* Mobile-friendly cards */
   .card {
-    @apply rounded-xl p-4 shadow-md;
+    @apply rounded-lg p-3 shadow-sm;
   }
 
   /* Mobile navigation improvements */
   .mobile-nav-item {
-    @apply flex flex-col items-center justify-center py-2 px-1 
-           min-h-[60px] text-xs font-medium;
+    @apply flex flex-col items-center justify-center py-1.5 px-1 
+           min-h-[50px] text-xs font-medium;
   }
 }
 
 /* Tablet optimizations */
 @media (min-width: 641px) and (max-width: 1024px) {
   .container-custom {
-    @apply px-6;
+    @apply px-4;
   }
 
   .responsive-grid {
-    @apply grid-cols-2 gap-6;
+    @apply grid-cols-2 gap-4;
   }
 }
 
@@ -314,7 +320,7 @@
   }
 
   .responsive-grid {
-    @apply grid-cols-3 gap-8;
+    @apply grid-cols-3 gap-6;
   }
 
   /* Hover effects only on desktop */
@@ -366,11 +372,11 @@
 /* Landscape mobile optimizations */
 @media (max-height: 500px) and (orientation: landscape) {
   .mobile-header {
-    @apply py-2;
+    @apply py-1.5;
   }
   
   .section-padding {
-    @apply py-4;
+    @apply py-3;
   }
 }
 
