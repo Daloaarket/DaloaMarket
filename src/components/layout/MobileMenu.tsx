@@ -1,17 +1,14 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Search, 
   User, 
-  ShoppingBag, 
   MessageSquare, 
-  LogOut, 
-  HelpCircle, 
-  Settings, 
   PlusCircle,
-  CreditCard,
-  X
+  Settings,
+  LogOut,
+  CreditCard
 } from 'lucide-react';
 import { useSupabase } from '../../hooks/useSupabase';
 
@@ -22,6 +19,7 @@ interface MobileMenuProps {
 const MobileMenu: React.FC<MobileMenuProps> = ({ onClose }) => {
   const { user, signOut, userProfile } = useSupabase();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -34,158 +32,151 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ onClose }) => {
     onClose();
   };
 
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Overlay sombre pour fermer le menu */}
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={onClose}
+      />
       
-      {/* Menu content - Pleine hauteur avec fond opaque */}
-      <div className="absolute top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-primary-600 px-4 py-4 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center">
-            <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center mr-3">
-              <ShoppingBag className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-white">DaloaMarket</span>
-          </div>
-          <button 
-            onClick={onClose}
-            className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors touch-target"
+      {/* Bottom Navigation Panel */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-grey-200 shadow-2xl">
+        {/* Main Navigation Grid */}
+        <div className="grid grid-cols-5 gap-1 p-2">
+          <button
+            onClick={() => handleNavigation('/')}
+            className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all ${
+              isActive('/') 
+                ? 'bg-primary text-white shadow-lg' 
+                : 'text-grey-600 hover:bg-grey-100'
+            }`}
           >
-            <X className="h-6 w-6" />
+            <Home className="h-5 w-5 mb-1" />
+            <span className="text-xs font-medium">Accueil</span>
+          </button>
+
+          <button
+            onClick={() => handleNavigation('/search')}
+            className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all ${
+              isActive('/search') 
+                ? 'bg-primary text-white shadow-lg' 
+                : 'text-grey-600 hover:bg-grey-100'
+            }`}
+          >
+            <Search className="h-5 w-5 mb-1" />
+            <span className="text-xs font-medium">Recherche</span>
+          </button>
+
+          <button
+            onClick={() => handleNavigation('/create-listing')}
+            className="flex flex-col items-center justify-center py-3 px-2 rounded-xl bg-gradient-to-br from-primary to-primary-600 text-white shadow-lg transform hover:scale-105 transition-all"
+          >
+            <PlusCircle className="h-6 w-6 mb-1" />
+            <span className="text-xs font-bold">Vendre</span>
+          </button>
+
+          <button
+            onClick={() => handleNavigation('/messages')}
+            className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all relative ${
+              isActive('/messages') 
+                ? 'bg-primary text-white shadow-lg' 
+                : 'text-grey-600 hover:bg-grey-100'
+            }`}
+          >
+            <MessageSquare className="h-5 w-5 mb-1" />
+            <span className="text-xs font-medium">Messages</span>
+            {/* Notification badge */}
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-error-500 rounded-full"></div>
+          </button>
+
+          <button
+            onClick={() => handleNavigation('/profile')}
+            className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all ${
+              isActive('/profile') 
+                ? 'bg-primary text-white shadow-lg' 
+                : 'text-grey-600 hover:bg-grey-100'
+            }`}
+          >
+            <User className="h-5 w-5 mb-1" />
+            <span className="text-xs font-medium">Profil</span>
           </button>
         </div>
 
-        {/* Contenu principal - Ajusté pour tenir dans l'écran */}
-        <div className="flex-1 bg-white px-4 py-4 flex flex-col justify-between overflow-hidden">
-          <div className="space-y-4">
-            {/* User Section */}
-            {user ? (
-              <div className="bg-gradient-to-br from-grey-50 to-grey-100 rounded-xl p-4 border border-grey-200">
-                <div className="flex items-center mb-3">
-                  <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center text-primary mr-3">
-                    <User className="h-6 w-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-grey-900 truncate">
-                      {userProfile?.full_name || 'Utilisateur'}
-                    </p>
-                    <p className="text-sm text-grey-600 truncate">{user.email}</p>
-                  </div>
+        {/* User Section (if logged in) */}
+        {user && (
+          <div className="border-t border-grey-200 p-3">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3">
+                  <User className="h-4 w-4 text-primary" />
                 </div>
-                <button 
-                  onClick={() => handleNavigation('/profile')}
-                  className="w-full btn-outline py-2 text-sm"
-                >
-                  Voir le profil
-                </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-grey-900 truncate">
+                    {userProfile?.full_name || 'Utilisateur'}
+                  </p>
+                  <p className="text-xs text-grey-600 truncate">{user.email}</p>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <button 
-                  onClick={() => handleNavigation('/login')}
-                  className="btn-primary w-full py-3 text-base"
-                >
-                  Connexion
-                </button>
-                <button 
-                  onClick={() => handleNavigation('/register')}
-                  className="btn-outline w-full py-3 text-base"
-                >
-                  Inscription
-                </button>
-              </div>
-            )}
+            </div>
 
-            {/* Main Navigation */}
-            <nav className="space-y-1">
-              <h3 className="text-sm font-semibold text-grey-500 uppercase tracking-wider mb-2">Navigation</h3>
-              
-              <button 
-                onClick={() => handleNavigation('/')}
-                className="flex items-center w-full py-3 px-3 rounded-lg hover:bg-grey-50 transition-colors group"
+            {/* Quick Actions */}
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => handleNavigation('/acheter-credits')}
+                className="flex flex-col items-center py-2 px-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 hover:from-blue-100 hover:to-blue-200 transition-all"
               >
-                <Home className="h-6 w-6 text-grey-600 group-hover:text-primary transition-colors" />
-                <span className="ml-4 text-grey-900 font-medium group-hover:text-primary transition-colors">Accueil</span>
+                <CreditCard className="h-4 w-4 text-blue-600 mb-1" />
+                <span className="text-xs font-medium text-blue-700">Crédits</span>
               </button>
 
-              <button 
-                onClick={() => handleNavigation('/search')}
-                className="flex items-center w-full py-3 px-3 rounded-lg hover:bg-grey-50 transition-colors group"
+              <button
+                onClick={() => handleNavigation('/settings')}
+                className="flex flex-col items-center py-2 px-3 bg-gradient-to-br from-grey-50 to-grey-100 rounded-lg border border-grey-200 hover:from-grey-100 hover:to-grey-200 transition-all"
               >
-                <Search className="h-6 w-6 text-grey-600 group-hover:text-primary transition-colors" />
-                <span className="ml-4 text-grey-900 font-medium group-hover:text-primary transition-colors">Rechercher</span>
+                <Settings className="h-4 w-4 text-grey-600 mb-1" />
+                <span className="text-xs font-medium text-grey-700">Réglages</span>
               </button>
 
-              <button 
-                onClick={() => handleNavigation('/create-listing')}
-                className="flex items-center w-full py-3 px-3 rounded-lg hover:bg-primary-50 transition-colors group bg-primary-50 border border-primary-200"
+              <button
+                onClick={handleSignOut}
+                className="flex flex-col items-center py-2 px-3 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200 hover:from-red-100 hover:to-red-200 transition-all"
               >
-                <PlusCircle className="h-6 w-6 text-primary" />
-                <span className="ml-4 text-primary font-semibold">Vendre un article</span>
-              </button>
-
-              <button 
-                onClick={() => handleNavigation('/messages')}
-                className="flex items-center w-full py-3 px-3 rounded-lg hover:bg-grey-50 transition-colors group"
-              >
-                <MessageSquare className="h-6 w-6 text-grey-600 group-hover:text-primary transition-colors" />
-                <span className="ml-4 text-grey-900 font-medium group-hover:text-primary transition-colors">Messages</span>
-                <div className="ml-auto w-2 h-2 bg-error-500 rounded-full"></div>
-              </button>
-
-              {user && (
-                <button 
-                  onClick={() => handleNavigation('/acheter-credits')}
-                  className="flex items-center w-full py-3 px-3 rounded-lg hover:bg-grey-50 transition-colors group"
-                >
-                  <CreditCard className="h-6 w-6 text-grey-600 group-hover:text-primary transition-colors" />
-                  <span className="ml-4 text-grey-900 font-medium group-hover:text-primary transition-colors">Acheter des crédits</span>
-                </button>
-              )}
-            </nav>
-          </div>
-
-          {/* Bottom Section */}
-          <div className="space-y-4">
-            {/* Account Section */}
-            {user && (
-              <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-grey-500 uppercase tracking-wider mb-2">Compte</h3>
-                
-                <button 
-                  onClick={() => handleNavigation('/settings')}
-                  className="flex items-center w-full py-3 px-3 rounded-lg hover:bg-grey-50 transition-colors group"
-                >
-                  <Settings className="h-6 w-6 text-grey-600 group-hover:text-primary transition-colors" />
-                  <span className="ml-4 text-grey-900 font-medium group-hover:text-primary transition-colors">Paramètres</span>
-                </button>
-
-                <button 
-                  onClick={handleSignOut}
-                  className="flex items-center w-full py-3 px-3 rounded-lg hover:bg-error-50 transition-colors group"
-                >
-                  <LogOut className="h-6 w-6 text-error-600" />
-                  <span className="ml-4 font-medium text-error-600">Déconnexion</span>
-                </button>
-              </div>
-            )}
-
-            {/* Help Section */}
-            <div className="pt-2 border-t border-grey-200">
-              <button 
-                onClick={() => handleNavigation('/help')}
-                className="flex items-center w-full py-3 px-3 rounded-lg hover:bg-grey-50 transition-colors group"
-              >
-                <HelpCircle className="h-6 w-6 text-grey-600 group-hover:text-primary transition-colors" />
-                <span className="ml-4 text-grey-900 font-medium group-hover:text-primary transition-colors">Aide & Support</span>
+                <LogOut className="h-4 w-4 text-red-600 mb-1" />
+                <span className="text-xs font-medium text-red-700">Sortir</span>
               </button>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Not logged in */}
+        {!user && (
+          <div className="border-t border-grey-200 p-3">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleNavigation('/login')}
+                className="py-2 px-4 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-600 transition-colors"
+              >
+                Connexion
+              </button>
+              <button
+                onClick={() => handleNavigation('/register')}
+                className="py-2 px-4 border border-grey-300 text-grey-700 rounded-lg font-medium text-sm hover:bg-grey-50 transition-colors"
+              >
+                Inscription
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Safe area for devices with home indicator */}
+        <div className="h-safe-area-bottom"></div>
       </div>
-    </div>
+    </>
   );
 };
 
